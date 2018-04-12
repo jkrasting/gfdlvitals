@@ -33,43 +33,25 @@ def mask_latitude_bands(var,cellArea,geoLat,geoLon,region=None):
       cellArea = cellArea
     return var, cellArea
 
-def area_mean(var,cellArea,geoLat,geoLon,cellFrac=None,soilFrac=None,region='global',varName=None,
-              cellDepth=None, component=None):
-    # Land-specific modifications
-    if component == 'land':
-        moduleDic = getWebsiteVariablesDic()
-        # Read dictionary of keys
-        if (varName in moduleDic.keys()):
-          module = moduleDic[varName]
-        elif (varName.lower() in moduleDic.keys()):
-          module = moduleDic[varName.lower()]
-        else:
-          module = ''
-        # Create a weighting factor
-        if module == 'vegn':
-          cellArea = cellArea*cellFrac*soilFrac
-        else:
-          cellArea = cellArea*cellFrac
-        # Create a 3-D mask if needed
-        if cellDepth is not None:
-         if var.shape[0] == cellDepth.shape[0]:
-           cellArea = np.tile(cellArea[None,:], (cellDepth.shape[0],1,1))
-           geoLat = np.tile(geoLat[None,:], (cellDepth.shape[0],1,1))
-           geoLon = np.tile(geoLon[None,:], (cellDepth.shape[0],1,1))
-         else:
-           print('Warning: inconsisent dimensions between varName and the cell depth axis.', \
-                 var.shape[0], cellDepth.shape[0])
-           null_result = np.ma.masked_where(True,0.)
-           return null_result, null_result
-        # Apply data mask to weighting mask
-        cellArea.mask = var.mask
+def area_mean(var,cellArea,geoLat,geoLon,region='global',varName=None,cellDepth=None, component=None):
+    if cellDepth is not None:
+      if var.shape[0] == cellDepth.shape[0]:
+        cellArea = np.tile(cellArea[None,:], (cellDepth.shape[0],1,1))
+        geoLat = np.tile(geoLat[None,:], (cellDepth.shape[0],1,1))
+        geoLon = np.tile(geoLon[None,:], (cellDepth.shape[0],1,1))
+      else:
+        print('Warning: inconsisent dimensions between varName and the cell depth axis.', \
+               var.shape[0], cellDepth.shape[0])
+        null_result = np.ma.masked_where(True,0.)
+        return null_result, null_result
+    cellArea = np.ma.array(cellArea)
+    cellArea.mask = var.mask
     var, cellArea = mask_latitude_bands(var,cellArea,geoLat,geoLon,region=region)
-    #-- Land depth averaging and summation
     if cellDepth is not None:
       summed = np.ma.sum(var * cellArea * np.tile(cellDepth[:,None,None], (1,var.shape[1],var.shape[2])))
       var = np.ma.average(var,axis=0,weights=cellDepth)
       res = np.ma.sum(var*cellArea)/cellArea.sum()
-      return res, summed
+      return res, summed.sum()
     else:
       res = np.ma.sum(var*cellArea)/cellArea.sum()
       return res, cellArea.sum()
@@ -91,6 +73,32 @@ def write_sqlite_data(sqlfile,varName,fYear,varmean=None,varsum=None,component=N
       sql = 'insert or replace into '+varName+' values('+fYear[:4]+','+str(varsum)+','+str(varmean)+')'
     else:
       sql = 'insert or replace into '+varName+' values('+fYear[:4]+','+str(varmean)+')'
+    sqlres = c.execute(sql)
+    conn.commit()
+    c.close()
+    conn.close()
+
+def parse_cell_measures(attr,key):
+    if attr is not None:
+        ind = attr.split().index(key+':')+1
+        return attr.split()[ind]
+    else:
+        return None
+
+def extract_metadata(f,varName,attr):
+    if attr in f.variables[varName].__dict__.keys(): 
+        return f.variables[varName].__dict__[attr]
+    else:
+        return None
+
+def write_metadata(sqlfile,varName,attr,value):
+    if value is None:
+        value = str('')
+    conn = sqlite3.connect(sqlfile)
+    c = conn.cursor()
+    sql = 'create table if not exists '+str(attr)+' (var text primary key, value text)'
+    sqlres = c.execute(sql)
+    sql = 'insert or replace into '+str(attr)+' values("'+str(varName)+'","'+str(value)+'")'
     sqlres = c.execute(sql)
     conn.commit()
     c.close()

@@ -20,6 +20,8 @@ for oceanFile in history:
   fdata = gmeantools.ncopen(fYear + '.' + oceanFile + '.nc',action=None)
   if fdata is not None:
     for varName in fdata.variables.keys():
+      units     = gmeantools.extract_metadata(fdata,varName,'units')
+      long_name = gmeantools.extract_metadata(fdata,varName,'long_name')
       ndims = len(fdata.variables[varName].shape)
       if ndims == 3:
         dims = fdata.variables[varName].dimensions
@@ -33,8 +35,11 @@ for oceanFile in history:
       var = np.ma.average(var,axis=0,weights=fdata.variables['average_DT'][:])
       for reg in ['global','tropics','nh','sh']:
         result, areaSum = gmeantools.area_mean(var,cellArea,geoLat,geoLon,region=reg)
-        gmeantools.write_sqlite_data(outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db',varName,fYear[:4],result)
-        gmeantools.write_sqlite_data(outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db','area',fYear[:4],areaSum)
+        sqlfile = outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db'
+        gmeantools.write_metadata(sqlfile,varName,'units',units)
+        gmeantools.write_metadata(sqlfile,varName,'long_name',long_name)
+        gmeantools.write_sqlite_data(sqlfile,varName,fYear[:4],result)
+        gmeantools.write_sqlite_data(sqlfile,'area',fYear[:4],areaSum)
   else:
     continue
 

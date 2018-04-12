@@ -51,11 +51,15 @@ for reg in ['global','nh','sh']:
 for v in fdata.variables.keys():
   #if len(fdata.variables[v].shape) == 3:
   if fdata.variables[v].shape == cellArea.shape:
+    units     = gmeantools.extract_metadata(fdata,v,'units')
+    long_name = gmeantools.extract_metadata(fdata,v,'long_name')
     data = fdata.variables[v][:]
     for reg in ['global','nh','sh']:
       sqlite_out = outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db'
       _v, _area = gmeantools.mask_latitude_bands(data,cellArea,geoLat,geoLon,region=reg)
       _v = np.ma.sum((_v*_area),axis=(-1,-2))/np.ma.sum(_area,axis=(-1,-2))
+      gmeantools.write_metadata(sqlite_out,v,'units',units)
+      gmeantools.write_metadata(sqlite_out,v,'long_name',long_name)
       gmeantools.write_sqlite_data(sqlite_out,v+'_mean',fYear[:4],np.ma.average(_v,axis=0,weights=average_DT))
       gmeantools.write_sqlite_data(sqlite_out,v+'_max', fYear[:4],np.ma.max(_v))
       gmeantools.write_sqlite_data(sqlite_out,v+'_min', fYear[:4],np.ma.min(_v))
