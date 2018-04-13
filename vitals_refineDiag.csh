@@ -3,12 +3,16 @@
 #------------------------------------------------------------------------------
 
 #-- Before anything, get the directory where this script lives
-set sourced=($_)
-if ("${sourced}" != "") then
-    set sourced = `echo ${sourced} | cut -f 2 -d ' '`
-    set sourced = `dirname ${sourced}`
-    echo "${sourced}"
-endif
+set sourced = `ls -l /proc/$$/fd | sed -e 's/^[^/]*//' | grep "/vitals_refineDiag.csh"`
+set sourced = `dirname ${sourced}`
+echo ${sourced}
+
+#set sourced=($_)
+#if ("${sourced}" != "") then
+#    set sourced = `echo ${sourced} | cut -f 2 -d ' '`
+#    set sourced = `dirname ${sourced}`
+#    echo "${sourced}"
+#endif
 
 echo "  ---------- begin vitals_refineDiag.csh --------  "
 date
