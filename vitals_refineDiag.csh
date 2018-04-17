@@ -2,21 +2,6 @@
 #  vitals refineDiag.csh
 #------------------------------------------------------------------------------
 
-#-- Before anything, get the directory where this script lives
-set sourced = `ls -l /proc/$$/fd | sed -e 's/^[^/]*//' | grep "/vitals_refineDiag.csh"`
-set sourced = `dirname ${sourced}`
-echo ${sourced}
-
-#set sourced=($_)
-#if ("${sourced}" != "") then
-#    set sourced = `echo ${sourced} | cut -f 2 -d ' '`
-#    set sourced = `dirname ${sourced}`
-#    echo "${sourced}"
-#endif
-
-echo "  ---------- begin vitals_refineDiag.csh --------  "
-date
-
 #-- Unload any previous versions of Python and load the system default
 module unload python
 module unload cdat
@@ -28,22 +13,14 @@ if (! -d ${localRoot}/db) then
   mkdir -p ${localRoot}/db
 endif
 
-#-- Change into the working directory
-cd $work/$hsmdate
-pwd
- 
-#-- Copy in the python tools to the working directory
-unalias cp
-cp -rfvp ${sourced}/python/*.py .
-
 #-- Run the averager script
-python global_average_cubesphere.py ${oname} ${refineDiagDir} Atmos atmos_month,atmos_co2_month
-python global_average_cubesphere.py ${oname} ${refineDiagDir} AtmosAer atmos_month_aer
-python global_average_land.py ${oname} ${refineDiagDir} Land land_month
-python global_average_ice.py ${oname} ${refineDiagDir} Ice ice_month
-python global_average_tripolar.py ${oname} ${refineDiagDir} COBALT ocean_cobalt_sfc,ocean_cobalt_misc,ocean_cobalt_tracers_year,ocean_cobalt_tracers_int
-python extract_ocean_scalar.py ${oname} ${refineDiagDir}
-python amoc.py ${oname} ${refineDiagDir} ${gridspec}
+python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} Atmos atmos_month,atmos_co2_month
+python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} AtmosAer atmos_month_aer
+python vitals/python/global_average_land.py ${oname} ${refineDiagDir} Land land_month
+python vitals/python/global_average_ice.py ${oname} ${refineDiagDir} Ice ice_month
+python vitals/python/global_average_tripolar.py ${oname} ${refineDiagDir} COBALT ocean_cobalt_sfc,ocean_cobalt_misc,ocean_cobalt_tracers_year,ocean_cobalt_tracers_int
+python vitals/python/extract_ocean_scalar.py ${oname} ${refineDiagDir}
+python vitals/python/amoc.py ${oname} ${refineDiagDir} ${gridspec}
 
 #-- Copy the database back to its original location
 foreach reg (global nh sh tropics)
@@ -51,7 +28,7 @@ foreach reg (global nh sh tropics)
     if ( ! -f ${localRoot}/db/${reg}Ave${component}.db ) then
       cp -fv ${refineDiagDir}/${oname}.${reg}Ave${component}.db ${localRoot}/db/${reg}Ave${component}.db
     else
-      python merge.py ${refineDiagDir}/${oname}.${reg}Ave${component}.db ${localRoot}/db/${reg}Ave${component}.db
+      python vitals/python/merge.py ${refineDiagDir}/${oname}.${reg}Ave${component}.db ${localRoot}/db/${reg}Ave${component}.db
     endif
   end 
 end
@@ -68,6 +45,3 @@ foreach f (*.db)
   endif
 end
 popd
-
-date
-echo "  ---------- end vitals_refineDiag.csh ----------  "
