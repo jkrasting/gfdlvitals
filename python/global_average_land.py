@@ -27,13 +27,14 @@ for f in [ data_tiles, gs_tiles ]:
 area_types = {}
 for f in [ data_tiles, gs_tiles ]:
   for v in f[0].variables:
-    if re.match(r'.*_area',v) or re.match(r'area_.*',v):
+    if re.match(r'.*_area',v) or re.match(r'area.*',v):
       # for now, skip the area variables that depend on time
       timedependent=False
       for d in f[0].variables[v].dimensions:
         timedependent=timedependent or f[0].dimensions[d].isunlimited()
       if not timedependent:
-        area_types[v] = gmeantools.cube_sphere_aggregate(v,f)
+        if v not in area_types.keys():
+          area_types[v] = gmeantools.cube_sphere_aggregate(v,f)
 
 depth = data_tiles[0].variables['zhalf_soil'][:]
 cellDepth = []
