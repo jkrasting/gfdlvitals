@@ -18,14 +18,23 @@ for tx in range(1,7): gs_tiles.append(gmeantools.ncopen(fYear + '.land_static.ti
 data_tiles = []
 for tx in range(1,7): data_tiles.append(gmeantools.ncopen(fYear + '.'+history+'.tile'+str(tx)+'.nc'))
 
-geoLat = gmeantools.cube_sphere_aggregate('geolat_t',gs_tiles)
-geoLon = gmeantools.cube_sphere_aggregate('geolon_t',gs_tiles)
+for f in [ data_tiles, gs_tiles ]:
+  if 'geolat_t' in f[0].variables:
+    geoLat = gmeantools.cube_sphere_aggregate('geolat_t',data_tiles)
+    geoLon = gmeantools.cube_sphere_aggregate('geolon_t',data_tiles)
+    break
+
 area_types = {}
-area_types['land_area'] = gmeantools.cube_sphere_aggregate('land_area',gs_tiles)
-area_types['soil_area'] = gmeantools.cube_sphere_aggregate('soil_area',gs_tiles)
-area_types['lake_area'] = gmeantools.cube_sphere_aggregate('lake_area',gs_tiles)
-area_types['glac_area'] = gmeantools.cube_sphere_aggregate('glac_area',data_tiles)
-#area_types['area_ntrl'] = gmeantools.cube_sphere_aggregate('area_ntrl',data_tiles)
+for f in [ data_tiles, gs_tiles ]:
+  for v in f[0].variables:
+    if re.match(r'.*_area',v) or re.match(r'area.*',v):
+      # for now, skip the area variables that depend on time
+      timedependent=False
+      for d in f[0].variables[v].dimensions:
+        timedependent=timedependent or f[0].dimensions[d].isunlimited()
+      if not timedependent:
+        if v not in area_types.keys():
+          area_types[v] = gmeantools.cube_sphere_aggregate(v,f)
 
 depth = data_tiles[0].variables['zhalf_soil'][:]
 cellDepth = []
