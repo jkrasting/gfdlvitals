@@ -21,6 +21,7 @@ python vitals/python/global_average_ice.py ${oname} ${refineDiagDir} Ice ice_mon
 python vitals/python/global_average_tripolar.py ${oname} ${refineDiagDir} COBALT ocean_cobalt_sfc,ocean_cobalt_misc,ocean_cobalt_tracers_year,ocean_cobalt_tracers_int
 python vitals/python/extract_ocean_scalar.py ${oname} ${refineDiagDir}
 python vitals/python/amoc.py ${oname} ${refineDiagDir} ${gridspec}
+python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} AeroCMIP aerosol_month_cmip
 
 #-- Copy the database back to its original location
 foreach reg (global nh sh tropics)
