@@ -3,7 +3,7 @@
 #------------------------------------------------------------------------------
 
 #-- Before anything, get the directory where this script lives
-set sourced = `ls -l /proc/$$/fd | sed -e 's/^[^/]*//' | grep "/vitals_refineDiag.csh"`
+set sourced = `ls -l /proc/$$/fd | sed -e 's/^[^/]*//' | grep "/vitals.csh"`
 set sourced = `dirname ${sourced}`
 echo ${sourced}
 
@@ -30,16 +30,17 @@ set tempDir = `mktemp -d`
 echo ${tempDir}
 
 #-- Run the averager script
-python python/global_average_cubesphere.py ${oname} ${tempDir} Atmos atmos_month,atmos_co2_month
-python python/global_average_cubesphere.py ${oname} ${tempDir} AtmosAer atmos_month_aer
-python python/global_average_land.py ${oname} ${tempDir} Land land_month
-python python/global_average_ice.py ${oname} ${tempDir} Ice ice_month
-python python/global_average_tripolar.py ${oname} ${tempDir} COBALT ocean_cobalt_sfc,ocean_cobalt_misc,ocean_cobalt_tracers_year,ocean_cobalt_tracers_int
-python python/extract_ocean_scalar.py ${oname} ${tempDir}
+python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} Atmos atmos_month,atmos_co2_month
+python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} AtmosAer atmos_month_aer
+python vitals/python/global_average_land.py ${oname} ${refineDiagDir} Land land_month
+python vitals/python/global_average_ice.py ${oname} ${refineDiagDir} Ice ice_month
+python vitals/python/global_average_tripolar.py ${oname} ${refineDiagDir} COBALT ocean_cobalt_sfc,ocean_cobalt_misc,ocean_cobalt_tracers_year,ocean_cobalt_tracers_int
+python vitals/python/extract_ocean_scalar.py ${oname} ${refineDiagDir}
+python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} AeroCMIP aerosol_month_cmip
 
 #-- Copy the database back to its original location
 foreach reg (global nh sh tropics)
-  foreach component (Atmos AtmosAer Land Ice COBALT Ocean)
+  foreach component (Atmos AtmosAer Land Ice COBALT Ocean AeroCMIP)
     if ( -f ${tempDir}/${oname}.${reg}Ave${component}.db ) then 
       if ( ! -f ../db/${reg}Ave${component}.db ) then
         cp -fv ${tempDir}/${oname}.${reg}Ave${component}.db ../db/${reg}Ave${component}.db

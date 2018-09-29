@@ -25,7 +25,7 @@ python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} Aero
 
 #-- Copy the database back to its original location
 foreach reg (global nh sh tropics)
-  foreach component (Atmos AtmosAer Land Ice COBALT Ocean)
+  foreach component (Atmos AtmosAer Land Ice COBALT Ocean AeroCMIP)
     if ( ! -f ${localRoot}/db/${reg}Ave${component}.db ) then
       cp -fv ${refineDiagDir}/${oname}.${reg}Ave${component}.db ${localRoot}/db/${reg}Ave${component}.db
     else
