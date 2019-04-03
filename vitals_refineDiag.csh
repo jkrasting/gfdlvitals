@@ -19,13 +19,14 @@ python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} Atmo
 python vitals/python/global_average_land.py ${oname} ${refineDiagDir} Land land_month
 python vitals/python/global_average_ice.py ${oname} ${refineDiagDir} Ice ice_month
 python vitals/python/global_average_tripolar.py ${oname} ${refineDiagDir} COBALT ocean_cobalt_sfc,ocean_cobalt_misc,ocean_cobalt_tracers_year,ocean_cobalt_tracers_int
+python vitals/python/global_average_tripolar.py ${oname} ${refineDiagDir} BLING ocean_bling,ocean_bling_cmip6_omip_2d,ocean_bling_cmip6_omip_rates_year_z,ocean_bling_cmip6_omip_sfc,ocean_bling_cmip6_omip_tracers_month_z,ocean_bling_cmip6_omip_tracers_year_z
 python vitals/python/extract_ocean_scalar.py ${oname} ${refineDiagDir}
 python vitals/python/amoc.py ${oname} ${refineDiagDir} ${gridspec}
 python vitals/python/global_average_cubesphere.py ${oname} ${refineDiagDir} AeroCMIP aerosol_month_cmip
 
 #-- Copy the database back to its original location
 foreach reg (global nh sh tropics)
-  foreach component (Atmos AtmosAer Land Ice COBALT Ocean AeroCMIP)
+  foreach component (Atmos AtmosAer Land Ice COBALT BLING Ocean AeroCMIP)
     if ( ! -f ${localRoot}/db/${reg}Ave${component}.db ) then
       cp -fv ${refineDiagDir}/${oname}.${reg}Ave${component}.db ${localRoot}/db/${reg}Ave${component}.db
     else
