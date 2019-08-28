@@ -8,9 +8,6 @@ import shutil
 import subprocess
 import tempfile
 
-__version__ = "2.0.0"
-
-
 def arguments():
     '''
     Function to capture the user-specified command line options
@@ -76,9 +73,14 @@ if __name__ == '__main__':
 
     #-- Obtain git commit hash for provenance
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    args.commit = gfdlvitals.util.git.retrieve_commit(script_dir)
-    print('Using gfdlvitals version '+__version__+' -- git version '
-        +args.commit)
+    commit = gfdlvitals.util.git.retrieve_commit(script_dir)
+    clean = gfdlvitals.util.git.is_clean(script_dir)
+    if clean is True:
+        args.commit = commit
+    else:
+        args.commit = None
+    print('Using gfdlvitals version '+gfdlvitals.__version__+
+          ' -- git version ' +str(args.commit))
 
     #-- Get a list of history files
     dirlist = sorted(glob.glob(args.historydir+"/*.tar"))
