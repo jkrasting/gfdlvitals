@@ -8,6 +8,9 @@ import shutil
 import subprocess
 import tempfile
 
+__version__ = "2.0.0"
+
+
 def arguments():
     '''
     Function to capture the user-specified command line options
@@ -38,6 +41,10 @@ def arguments():
     parser.add_argument('-e', '--endyear', type=int, default=None,
         help='Ending year to process. Default is all years.')
 
+    parser.add_argument('-g', '--gridspec', type=str, default=None,
+        help='Path to gridspec tarfile. Used in AMOC calculation. '+
+             'Default is None')
+
     return parser.parse_args()
 
 
@@ -46,9 +53,9 @@ def process_year(args,infile):
     #-- Set the model year string
     fYear = str(infile.split('/')[-1].split('.')[0])
     if args.modelclass == 'ESM2':
-        gfdlvitals.models.ESM2.routines(infile)
+        gfdlvitals.models.ESM2.routines(args,infile)
     if args.modelclass == 'ESM4':
-        gfdlvitals.models.ESM4.routines(infile)
+        gfdlvitals.models.ESM4.routines(args,infile)
     #-- Move results to their final location 
     if not os.path.exists(args.outdir):
       os.makedirs(args.outdir)
@@ -66,6 +73,12 @@ def process_year(args,infile):
 
 if __name__ == '__main__':
     args = arguments()
+
+    #-- Obtain git commit hash for provenance
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    args.commit = gfdlvitals.util.git.retrieve_commit(script_dir)
+    print('Using gfdlvitals version '+__version__+' -- git version '
+        +args.commit)
 
     #-- Get a list of history files
     dirlist = sorted(glob.glob(args.historydir+"/*.tar"))
