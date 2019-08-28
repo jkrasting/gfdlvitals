@@ -1,49 +1,12 @@
-import gmeantools
 import numpy as np
-import netCDF4 as nc
-import pickle
+import multiprocessing
 import re
-import sqlite3
-import sys
-import urllib2
 
-fYear = sys.argv[1]
-outdir = sys.argv[2]
-label = sys.argv[3]
-history = sys.argv[4]
+import gfdlvitals.util.gmeantools as gmeantools
 
-gs_tiles = []
-for tx in range(1,7): gs_tiles.append(gmeantools.ncopen(fYear + '.land_static.tile'+str(tx)+'.nc'))
+__all__ = ['process_var','average']
 
-data_tiles = []
-for tx in range(1,7): data_tiles.append(gmeantools.ncopen(fYear + '.'+history+'.tile'+str(tx)+'.nc'))
-
-for f in [ data_tiles, gs_tiles ]:
-  if 'geolat_t' in f[0].variables:
-    geoLat = gmeantools.cube_sphere_aggregate('geolat_t',data_tiles)
-    geoLon = gmeantools.cube_sphere_aggregate('geolon_t',data_tiles)
-    break
-
-area_types = {}
-for f in [ data_tiles, gs_tiles ]:
-  for v in f[0].variables:
-    if re.match(r'.*_area',v) or re.match(r'area.*',v):
-      # for now, skip the area variables that depend on time
-      timedependent=False
-      for d in f[0].variables[v].dimensions:
-        timedependent=timedependent or f[0].dimensions[d].isunlimited()
-      if not timedependent:
-        if v not in area_types.keys():
-          area_types[v] = gmeantools.cube_sphere_aggregate(v,f)
-
-depth = data_tiles[0].variables['zhalf_soil'][:]
-cellDepth = []
-for i in range(1,len(depth)):
-  thickness = round((depth[i] - depth[i-1]),2)
-  cellDepth.append(thickness)
-cellDepth = np.array(cellDepth)
-
-for varName in sorted(data_tiles[0].variables.keys()):
+def process_var(varName):
   varshape = data_tiles[0].variables[varName].shape
   units     = gmeantools.extract_metadata(data_tiles[0],varName,'units')
   long_name = gmeantools.extract_metadata(data_tiles[0],varName,'long_name')
@@ -56,7 +19,8 @@ for varName in sorted(data_tiles[0].variables.keys()):
   
       if (len(varshape) == 3):
         for reg in ['global','tropics','nh','sh']:
-          result, areaSum = gmeantools.area_mean(var,area_types[area_measure],geoLat,geoLon,region=reg)
+          result, areaSum = gmeantools.area_mean(var,area_types[area_measure],
+              geoLat,geoLon,region=reg)
           if not hasattr(result,'mask'):
             sqlfile = outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db'
             gmeantools.write_metadata(sqlfile,varName,'units',units)
@@ -68,7 +32,8 @@ for varName in sorted(data_tiles[0].variables.keys()):
       elif (len(varshape) == 4):
         if varshape[1] == cellDepth.shape[0]:
           for reg in ['global','tropics','nh','sh']:
-            result, volumeSum = gmeantools.area_mean(var,area_types[area_measure],geoLat,geoLon,region=reg,cellDepth=cellDepth)
+            result, volumeSum = gmeantools.area_mean(var,area_types[area_measure],
+                geoLat,geoLon,region=reg,cellDepth=cellDepth)
             sqlfile = outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db' 
             gmeantools.write_metadata(sqlfile,varName,'units',units)
             gmeantools.write_metadata(sqlfile,varName,'long_name',long_name)
@@ -76,4 +41,51 @@ for varName in sorted(data_tiles[0].variables.keys()):
             gmeantools.write_sqlite_data(sqlfile,varName,fYear[:4],result)
             gmeantools.write_sqlite_data(sqlfile,area_measure.replace('area','volume'),fYear[:4],volumeSum)
 
-exit()
+
+def average(gs_tl,da_tl,year,out,lab):
+    global gs_tiles
+    global data_tiles
+    global fYear
+    global outdir
+    global label
+
+    gs_tiles = gs_tl
+    data_tiles = da_tl
+    fYear = year
+    outdir = out
+    label = lab
+
+    global geoLon
+    global geoLat
+
+    for f in [ data_tiles, gs_tiles ]:
+      if 'geolat_t' in f[0].variables:
+        geoLat = gmeantools.cube_sphere_aggregate('geolat_t',data_tiles)
+        geoLon = gmeantools.cube_sphere_aggregate('geolon_t',data_tiles)
+        break
+
+    global area_types
+
+    area_types = {}
+    for f in [ data_tiles , gs_tiles ]:
+      for v in sorted(f[0].variables):
+        if re.match(r'.*_area',v) or re.match(r'area.*',v):
+          # for now, skip the area variables that depend on time
+          timedependent=False
+          for d in f[0].variables[v].dimensions:
+            timedependent=timedependent or f[0].dimensions[d].isunlimited()
+          if not timedependent:
+            if v not in area_types.keys():
+              area_types[v] = gmeantools.cube_sphere_aggregate(v,f)
+
+    global cellDepth
+
+    depth = data_tiles[0].variables['zhalf_soil'][:]
+    cellDepth = []
+    for i in range(1,len(depth)):
+      thickness = round((depth[i] - depth[i-1]),2)
+      cellDepth.append(thickness)
+    cellDepth = np.array(cellDepth)
+
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+    pool.map(process_var,data_tiles[0].variables.keys())

@@ -45,11 +45,3 @@ def average(gs_tl,da_tl,year,out,lab):
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     pool.map(process_var,data_tiles[0].variables.keys())
-
-#gs_tiles = []
-#for tx in range(1,7): gs_tiles.append(gmeantools.ncopen(fYear + '.grid_spec.tile'+str(tx)+'.nc'))
-#
-#for atmosFile in history:
-#    data_tiles = []
-#    for tx in range(1,7): data_tiles.append(gmeantools.ncopen(fYear + '.'+atmosFile+'.tile'+str(tx)+'.nc'))
-

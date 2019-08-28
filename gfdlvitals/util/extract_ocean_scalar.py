@@ -1,13 +1,8 @@
-import netCDF4 as nc
-import numpy as np
-import sqlite3
-import sys
 from . import gmeantools
 
-__all__ = ['open']
+__all__ = ['MOM6']
 
-def open(fYear,outdir):
-    fdata = gmeantools.ncopen(fYear + '.ocean_scalar_annual.nc')
+def MOM6(fdata,fYear,outdir):
 
     ignoreList = ['time_bounds', 'time_bnds', 'average_T2', \
                   'average_T1', 'average_DT']
