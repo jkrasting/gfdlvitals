@@ -47,6 +47,8 @@ def process_year(args,infile):
     fYear = str(infile.split('/')[-1].split('.')[0])
     if args.modelclass == 'ESM2':
         gfdlvitals.models.ESM2.routines(infile)
+    if args.modelclass == 'ESM4':
+        gfdlvitals.models.ESM4.routines(infile)
     #-- Move results to their final location 
     if not os.path.exists(args.outdir):
       os.makedirs(args.outdir)
