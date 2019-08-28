@@ -4,7 +4,7 @@ from gfdlvitals.util.netcdf import extract_from_tar
 
 __all__ = ['routines']
 
-def routines(infile):
+def routines(args,infile):
     #-- Open the tarfile
     tar = tarfile.open(infile)
     members = tar.getnames()
