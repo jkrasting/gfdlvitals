@@ -100,9 +100,10 @@ if __name__ == '__main__':
         infiles = dirlist
 
     #-- DMGET the history files
-    print('Dmgetting files ...')
-    subprocess.call(['dmget']+infiles)
-    print('Complete!')
+    if shutil.which('dmget') is not None:
+        print('Dmgetting files ...')
+        subprocess.call(['dmget']+infiles)
+        print('Complete!')
 
     #-- Make temporary directory to work in 
     cwd = os.getcwd()
