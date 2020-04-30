@@ -2,10 +2,10 @@ from gfdlvitals.util import gmeantools
 import numpy as np
 import sys
 
-sys.path.append('/nbhome/ogrp/warsaw_201710_MOM6_2017.10.19/'+
-    'OM4p25_IAF_baseline/mom6/tools/analysis/')
+#sys.path.append('/nbhome/ogrp/warsaw_201710_MOM6_2017.10.19/'+
+#    'OM4p25_IAF_baseline/mom6/tools/analysis/')
 
-import m6toolbox
+from . import m6toolbox
 
 __all__ = ['MOM6']
 
