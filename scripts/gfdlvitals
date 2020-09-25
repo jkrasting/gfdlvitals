@@ -64,7 +64,7 @@ def process_year(args,infile):
     if not os.path.exists(args.outdir):
       os.makedirs(args.outdir)
     for reg in ['global','nh','sh','tropics']:
-      for component in ['Land','Atmos','Ocean','Ice','TOPAZ']:
+      for component in ['Land','Atmos','Ocean','Ice','TOPAZ','BLING','Timing']:
         if os.path.exists(fYear+'.'+reg+'Ave'+component+'.db'):
           if not os.path.exists(args.outdir+'/'+reg+'Ave'+component+'.db'):
             shutil.copyfile(fYear+'.'+reg+'Ave'+component+'.db',args.outdir+\
@@ -88,6 +88,8 @@ if __name__ == '__main__':
         args.commit = None
     print('Using gfdlvitals version '+gfdlvitals.__version__+
           ' -- git version ' +str(args.commit))
+
+    args.outdir = os.path.abspath(args.outdir)
 
     #-- Get a list of history files
     dirlist = sorted(glob.glob(args.historydir+"/*.tar"))
