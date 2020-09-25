@@ -30,7 +30,7 @@ def arguments():
         help='Output directory. Default is current directory')
 
     parser.add_argument('-m', '--modelclass', type=str, default='CM4',
-        help='Model class. Options include CM4 and ESM2. Default is CM4')
+        help='Model class. Options include ESM4, CM4, OM4 and ESM2. Default is CM4')
 
     parser.add_argument('-s', '--startyear', type=int, default=None,
         help='Starting year to process. Default is all years.')
@@ -53,6 +53,8 @@ def process_year(args,infile):
         gfdlvitals.models.ESM2.routines(args,infile)
     if args.modelclass == 'ESM4':
         gfdlvitals.models.ESM4.routines(args,infile)
+    if args.modelclass == 'OM4':
+        gfdlvitals.models.OM4.routines(args,infile)
     #-- Move results to their final location 
     if not os.path.exists(args.outdir):
       os.makedirs(args.outdir)
