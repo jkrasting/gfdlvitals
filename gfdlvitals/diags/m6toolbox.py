@@ -328,7 +328,7 @@ def genBasinMasks(x,y,depth,verbose=False):
   if j:
     if verbose: print('There are leftover points unassigned to a basin code')
     while j:
-      print(x[j,i],y[j,i],[j,i])
+      #print(x[j,i],y[j,i],[j,i])
       wet[j,i]=0
       (j,i) = np.unravel_index( wet.argmax(), x.shape)
   else: 

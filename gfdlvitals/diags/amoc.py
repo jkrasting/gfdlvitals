@@ -30,6 +30,7 @@ def MOM6(vhFile,f_ocean_hgrid,f_topog,fYear,outdir,label):
     #-- Compute psi
     psi = m6toolbox.MOCpsi(vh,vmsk=atlmask)
     maxsfn = np.max(psi[np.logical_and(zt>500,zt<2500)][:,np.greater_equal(yq,20)])
+    print("  AMOC = "+str(maxsfn))
     
     #-- Write to sqlite
     gmeantools.write_sqlite_data(outdir+'/'+fYear+'.globalAve'+label+'.db',

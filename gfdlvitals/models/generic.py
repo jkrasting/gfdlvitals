@@ -175,6 +175,7 @@ def routines(args,infile):
 
 
     #-- AMOC
+    print('Calculating AMOC')
     label = 'Ocean'
     if args.gridspec is not None:
         gs_tar = tarfile.open(args.gridspec)
@@ -196,16 +197,29 @@ def routines(args,infile):
         else:
             print('No ocean_topog file found ... skipping AMOC')
 
-        ocean_hgrid = extract_from_tar(gs_tar,hgrid_file)
-        topog = extract_from_tar(gs_tar,topog_file)
-        fname = modifier + fYear + '.ocean_annual_z.nc'
-        if fname in members:
-            vhFile = extract_from_tar(tar,fname)
-            diags.amoc.MOM6(vhFile,ocean_hgrid,topog,fYear,'./',label)
-            ocean_hgrid.close()
-            topog.close()
-            vhFile.close()
-        gs_tar.close()
+        try:
+            ocean_hgrid = extract_from_tar(gs_tar,hgrid_file)
+            topog = extract_from_tar(gs_tar,topog_file)
+            fname = modifier + fYear + '.ocean_annual_z.nc'
+            if fname in members:
+                vhFile = extract_from_tar(tar,fname)
+                diags.amoc.MOM6(vhFile,ocean_hgrid,topog,fYear,'./',label)
+                ocean_hgrid.close()
+                topog.close()
+                vhFile.close()
+            gs_tar.close()
+        except:
+            print('  * Unable to process')
 
     #-- Close out the tarfile handle
     tar.close()
+
+    #-- Do performance timing
+    print('Extracting FMS timings')
+    infile = infile.replace('/history/','/ascii/')
+    infile = infile.replace('.nc.tar','.ascii_out.tar')
+    label = 'Timing'
+    try:
+        diags.fms.timing(infile,fYear,'./',label)
+    except:
+        print('  * Unable to process')
