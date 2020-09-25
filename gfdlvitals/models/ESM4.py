@@ -191,3 +191,9 @@ def routines(args,infile):
 
     #-- Close out the tarfile handle
     tar.close()
+
+    #-- Do performance timing
+    infile = infile.replace('/history/','/ascii/')
+    infile = infile.replace('.nc.tar','.ascii_out.tar')
+    label = 'Timing'
+    diags.fms.timing(infile,fYear,'./',label)
