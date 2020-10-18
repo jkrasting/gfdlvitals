@@ -1,0 +1,17 @@
+INSERT INTO cell_measure VALUES('fco2','land_area');
+INSERT INTO cell_measure VALUES('LWS','land_area');
+INSERT INTO cell_measure VALUES('precip','land_area');
+INSERT INTO fco2 VALUES(1,-3.939072072027178086e-10);
+INSERT INTO fco2 VALUES(2,-7.7090726072622268094e-12);
+INSERT INTO land_area VALUES(1,19287488000000.0);
+INSERT INTO land_area VALUES(2,19287488000000.0);
+INSERT INTO long_name VALUES('fco2','flux of CO2 to canopy air');
+INSERT INTO long_name VALUES('LWS','liquid storage on land');
+INSERT INTO long_name VALUES('precip','precipitation rate');
+INSERT INTO LWS VALUES(1,1481.775739030802697);
+INSERT INTO LWS VALUES(2,1479.003053604590832);
+INSERT INTO precip VALUES(1,1.2062975637252504744e-05);
+INSERT INTO precip VALUES(2,1.1414268009038067803e-05);
+INSERT INTO units VALUES('fco2','kg C/(m2 s)');
+INSERT INTO units VALUES('LWS','kg/m2');
+INSERT INTO units VALUES('precip','kg/(m2 s)');
