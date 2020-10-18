@@ -42,7 +42,11 @@ def arguments():
         help='Path to gridspec tarfile. Used in AMOC calculation. '+
              'Default is None')
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.historydir = os.path.abspath(args.historydir)
+    args.gridspec = os.path.abspath(args.gridspec)
+
+    return args
 
 
 
