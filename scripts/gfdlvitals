@@ -44,7 +44,8 @@ def arguments():
 
     args = parser.parse_args()
     args.historydir = os.path.abspath(args.historydir)
-    args.gridspec = os.path.abspath(args.gridspec)
+    if args.gridspec is not None:
+        args.gridspec = os.path.abspath(args.gridspec)
 
     return args
 

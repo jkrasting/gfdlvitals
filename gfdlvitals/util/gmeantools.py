@@ -3,6 +3,8 @@ import numpy as np
 import os
 import pickle
 import sqlite3
+import random
+import time
 
 __all__ = ['getWebsiteVariablesDic',
     'ncopen',
@@ -115,20 +117,19 @@ def cube_sphere_aggregate(var,tiles):
                               tiles[4].variables[var][:], tiles[5].variables[var][:]),axis=-1)
 
 def write_sqlite_data(sqlfile,varName,fYear,varmean=None,varsum=None,component=None):
+    if component == 'land':
+      sql1 = 'create table if not exists '+varName+' (year integer primary key, sum float, avg float)'
+      sql2 = 'insert or replace into '+varName+' values('+fYear[:4]+','+str(varsum)+','+str(varmean)+')'
+    else:
+      sql1 = 'create table if not exists '+varName+' (year integer primary key, value float)'
+      sql2 = 'insert or replace into '+varName+' values('+fYear[:4]+','+str(varmean)+')'
+    time.sleep(random.random())
     conn = sqlite3.connect(sqlfile)
     c = conn.cursor()
-    if component == 'land':
-      sql = 'create table if not exists '+varName+' (year integer primary key, sum float, avg float)'
-    else:
-      sql = 'create table if not exists '+varName+' (year integer primary key, value float)'
-    sqlres = c.execute(sql)
-    if component == 'land':
-      sql = 'insert or replace into '+varName+' values('+fYear[:4]+','+str(varsum)+','+str(varmean)+')'
-    else:
-      sql = 'insert or replace into '+varName+' values('+fYear[:4]+','+str(varmean)+')'
-    sqlres = c.execute(sql)
-    conn.commit()
+    sqlres = c.execute(sql1)
+    sqlres = c.execute(sql2)
     c.close()
+    conn.commit()
     conn.close()
 
 def parse_cell_measures(attr,key):
@@ -147,14 +148,15 @@ def extract_metadata(f,varName,attr):
 def write_metadata(sqlfile,varName,attr,value):
     if value is None:
         value = str('')
+    sql1 = 'create table if not exists '+str(attr)+' (var text primary key, value text)'
+    sql2 = 'insert or replace into '+str(attr)+' values("'+str(varName)+'","'+str(value)+'")'
+    time.sleep(random.random())
     conn = sqlite3.connect(sqlfile)
     c = conn.cursor()
-    sql = 'create table if not exists '+str(attr)+' (var text primary key, value text)'
-    sqlres = c.execute(sql)
-    sql = 'insert or replace into '+str(attr)+' values("'+str(varName)+'","'+str(value)+'")'
-    sqlres = c.execute(sql)
-    conn.commit()
+    sqlres = c.execute(sql1)
+    sqlres = c.execute(sql2)
     c.close()
+    conn.commit()
     conn.close()
 
 def standard_grid_cell_area(lat,lon,rE=6371.e3):
