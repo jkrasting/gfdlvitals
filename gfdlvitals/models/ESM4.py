@@ -5,11 +5,11 @@ from gfdlvitals import averagers
 from gfdlvitals import diags
 from gfdlvitals.util import extract_ocean_scalar
 from gfdlvitals.util.netcdf import extract_from_tar
+from gfdlvitals.util.netcdf import tar_member_exists
 
 import gfdlvitals.util.netcdf as nctools
 
 __all__ = ["routines"]
-
 
 def routines(args, infile):
 
@@ -21,110 +21,44 @@ def routines(args, infile):
     fYear = str(infile.split("/")[-1].split(".")[0])
     print("Processing " + fYear)
 
-    if members[-1][0:2] == "./":
-        modifier = "./"
-    else:
-        modifier = ""
+    # -- Atmospheric Fields
+    modules = {
+        "atmos_month": "Atmos",
+        "atmos_co2_month": "Atmos",
+        "atmos_month_aer": "AtmosAer",
+        "aerosol_month_cmip": "AeroCMIP",
+    }
+    averagers.cubesphere.driver(fYear,tar,modules)
 
-    # -- Atmosphere
-    label = "Atmos"
-    modules = ["atmos_month", "atmos_co2_month"]
-    # -- open gridspec tiles
-    gs_tiles = []
-    for tx in range(1, 7):
-        gs_tiles.append(
-            extract_from_tar(
-                tar, modifier + fYear + ".grid_spec.tile" + str(tx) + ".nc"
-            )
-        )
-    # -- data tiles
-    for module in modules:
-        fname = modifier + fYear + "." + module + ".tile1.nc"
-        if fname in members:
-            data_tiles = []
-            for tx in range(1, 7):
-                data_tiles.append(
-                    extract_from_tar(
-                        tar, modifier + fYear + "." + module + ".tile" + str(tx) + ".nc"
-                    )
-                )
-            print(fname)
-            averagers.cubesphere.average(gs_tiles, data_tiles, fYear, "./", label)
+    # -- Land Fields
+    modules = {"land_month": "Land"}
+    averagers.land_lm4.driver(fYear,tar,modules)
 
-    # -- Aerosols
-    label = "AtmosAer"
-    modules = ["atmos_month_aer"]
-    # -- open gridspec tiles
-    gs_tiles = []
-    for tx in range(1, 7):
-        gs_tiles.append(
-            extract_from_tar(
-                tar, modifier + fYear + ".grid_spec.tile" + str(tx) + ".nc"
-            )
-        )
-    # -- data tiles
-    for module in modules:
-        fname = modifier + fYear + "." + module + ".tile1.nc"
-        if fname in members:
-            data_tiles = []
-            for tx in range(1, 7):
-                data_tiles.append(
-                    extract_from_tar(
-                        tar, modifier + fYear + "." + module + ".tile" + str(tx) + ".nc"
-                    )
-                )
-            print(fname)
-            averagers.cubesphere.average(gs_tiles, data_tiles, fYear, "./", label)
+    # -- Ice
+    modules = {"ice_month": "Ice"}
+    averagers.ice.driver(fYear,tar,modules)
+    
+    # -- Ocean
+    fname = f"{fYear}.ocean_scalar_annual.nc"
+    if tar_member_exists(tar,fname):
+        print(f"{fYear} - ocean_scalar_annual")
+        fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
+        extract_ocean_scalar.MOM6(fdata, fYear, "./")
+        fdata.close()
 
-    # -- Aerosols (CMIP)
-    label = "AeroCMIP"
-    modules = ["aerosol_month_cmip"]
-    # -- open gridspec tiles
-    gs_tiles = []
-    for tx in range(1, 7):
-        gs_tiles.append(
-            extract_from_tar(
-                tar, modifier + fYear + ".grid_spec.tile" + str(tx) + ".nc"
-            )
-        )
-    # -- data tiles
-    for module in modules:
-        fname = modifier + fYear + "." + module + ".tile1.nc"
-        if fname in members:
-            data_tiles = []
-            for tx in range(1, 7):
-                data_tiles.append(
-                    extract_from_tar(
-                        tar, modifier + fYear + "." + module + ".tile" + str(tx) + ".nc"
-                    )
-                )
-            print(fname)
-            averagers.cubesphere.average(gs_tiles, data_tiles, fYear, "./", label)
+    # -- AMOC
+    if args.gridspec is not None:
+        gs_tar = tarfile.open(args.gridspec)
+        ocean_hgrid = extract_from_tar(gs_tar, "ocean_hgrid.nc", ncfile=True)
+        topog = extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
+        fname = f"{fYear}.ocean_annual_z.nc"
+        if tar_member_exists(tar,fname):
+            vhFile = extract_from_tar(tar, fname, ncfile=True)
+            diags.amoc.MOM6(vhFile, ocean_hgrid, topog, fYear, "./", "Ocean")
+        _ = [x.close() for x in [ocean_hgrid, topog, vhFile, gs_tar]]
 
-    # -- Land
-    label = "Land"
-    modules = ["land_month"]
-    # -- open gridspec tiles
-    gs_tiles = []
-    for tx in range(1, 7):
-        gs_tiles.append(
-            extract_from_tar(
-                tar, modifier + fYear + ".land_static.tile" + str(tx) + ".nc"
-            )
-        )
-    # -- data tiles
-    for module in modules:
-        fname = modifier + fYear + "." + module + ".tile1.nc"
-        if fname in members:
-            data_tiles = []
-            for tx in range(1, 7):
-                data_tiles.append(
-                    extract_from_tar(
-                        tar, modifier + fYear + "." + module + ".tile" + str(tx) + ".nc"
-                    )
-                )
-            print(fname)
-            averagers.land_lm4.average(gs_tiles, data_tiles, fYear, "./", label)
+    # -- Close out the tarfile handle
+    tar.close()
 
     # # -- COBALT
     # label = "COBALT"
@@ -173,52 +107,8 @@ def routines(args, infile):
     #             averagers.tripolar.average(fgs, fdata, fYear, "./", label)
     #             fdata.close()
     #     fgs.close()
-
-    # -- Ice
-    label = "Ice"
-    modules = ["ice_month"]
-    fgs = None
-    if modifier + fYear + ".ice_static.nc" in members:
-        fgs = extract_from_tar(tar, modifier + fYear + ".ice_static.nc")
-    elif modifier + fYear + ".ice_month.nc" in members:
-        fgs = extract_from_tar(tar, modifier + fYear + ".ice_month.nc")
-    if fgs is not None:
-        for module in modules:
-            fname = modifier + fYear + "." + module + ".nc"
-            if fname in members:
-                fdata = extract_from_tar(tar, fname)
-                print(fname)
-                averagers.ice.average(fgs, fdata, fYear, "./", label)
-
-    # -- Ocean
-    label = "Ocean"
-    fname = modifier + fYear + ".ocean_scalar_annual.nc"
-    if fname in members:
-        print(fname)
-        fdata = nctools.extract_from_tar(tar, fname)
-        fdata = nctools.in_mem_nc(fdata)
-        extract_ocean_scalar.MOM6(fdata, fYear, "./")
-        fdata.close()
-
-    # -- AMOC
-    label = "Ocean"
-    if args.gridspec is not None:
-        gs_tar = tarfile.open(args.gridspec)
-        ocean_hgrid = extract_from_tar(gs_tar, "ocean_hgrid.nc", ncfile=True)
-        topog = extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
-        fname = modifier + fYear + ".ocean_annual_z.nc"
-        if fname in members:
-            vhFile = extract_from_tar(tar, fname, ncfile=True)
-            diags.amoc.MOM6(vhFile, ocean_hgrid, topog, fYear, "./", label)
-            ocean_hgrid.close()
-            topog.close()
-            vhFile.close()
-        gs_tar.close()
-
-    # -- Close out the tarfile handle
-    tar.close()
-
     # -- Do performance timing
+
     try:
         infile = infile.replace("/history/", "/ascii/")
         infile = infile.replace(".nc.tar", ".ascii_out.tar")

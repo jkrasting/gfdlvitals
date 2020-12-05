@@ -46,30 +46,30 @@ def mask_latitude_bands(var,cellArea,geoLat,geoLon,region=None):
       cellArea = cellArea
     return var, cellArea
 
-def area_mean(var,cellArea,geoLat,geoLon,region='global',varName=None,cellDepth=None, component=None):
-    if cellDepth is not None:
-      if var.shape[0] == cellDepth.shape[0]:
-        cellArea = np.tile(cellArea[None,:], (cellDepth.shape[0],1,1))
-        geoLat = np.tile(geoLat[None,:], (cellDepth.shape[0],1,1))
-        geoLon = np.tile(geoLon[None,:], (cellDepth.shape[0],1,1))
+def area_mean(var,cellArea,geoLat,geoLon,region='global',varName=None,cell_depth=None, component=None):
+    if cell_depth is not None:
+      if var.shape[0] == cell_depth.shape[0]:
+        cellArea = np.tile(cellArea[None,:], (cell_depth.shape[0],1,1))
+        geoLat = np.tile(geoLat[None,:], (cell_depth.shape[0],1,1))
+        geoLon = np.tile(geoLon[None,:], (cell_depth.shape[0],1,1))
       else:
         print('Warning: inconsisent dimensions between varName and the cell depth axis.', \
-               var.shape[0], cellDepth.shape[0])
+               var.shape[0], cell_depth.shape[0])
         null_result = np.ma.masked_where(True,0.)
         return null_result, null_result
     cellArea = np.ma.array(cellArea)
     cellArea.mask = var.mask
     var, cellArea = mask_latitude_bands(var,cellArea,geoLat,geoLon,region=region)
-    if cellDepth is not None:
-      summed = np.ma.sum(var * cellArea * np.tile(cellDepth[:,None,None], (1,var.shape[1],var.shape[2])))
-      var = np.ma.average(var,axis=0,weights=cellDepth)
+    if cell_depth is not None:
+      summed = np.ma.sum(var * cellArea * np.tile(cell_depth[:,None,None], (1,var.shape[1],var.shape[2])))
+      var = np.ma.average(var,axis=0,weights=cell_depth)
       res = np.ma.sum(var*cellArea)/cellArea.sum()
       return res, summed.sum()
     else:
       res = np.ma.sum(var*cellArea)/cellArea.sum()
       return res, cellArea.sum()
 
-def legacy_area_mean(var,cellArea,geoLat,geoLon,cellFrac=None,soilFrac=None,region='global',varName=None,cellDepth=None, component=None):
+def legacy_area_mean(var,cellArea,geoLat,geoLon,cellFrac=None,soilFrac=None,region='global',varName=None,cell_depth=None, component=None):
     # Land-specific modifications
     if component == 'land':
         moduleDic = getWebsiteVariablesDic()
@@ -86,23 +86,23 @@ def legacy_area_mean(var,cellArea,geoLat,geoLon,cellFrac=None,soilFrac=None,regi
         else:
           cellArea = cellArea*cellFrac
         # Create a 3-D mask if needed
-        if cellDepth is not None:
-         if var.shape[0] == cellDepth.shape[0]:
-           cellArea = np.tile(cellArea[None,:], (cellDepth.shape[0],1,1))
-           geoLat = np.tile(geoLat[None,:], (cellDepth.shape[0],1,1))
-           geoLon = np.tile(geoLon[None,:], (cellDepth.shape[0],1,1))
+        if cell_depth is not None:
+         if var.shape[0] == cell_depth.shape[0]:
+           cellArea = np.tile(cellArea[None,:], (cell_depth.shape[0],1,1))
+           geoLat = np.tile(geoLat[None,:], (cell_depth.shape[0],1,1))
+           geoLon = np.tile(geoLon[None,:], (cell_depth.shape[0],1,1))
          else:
            print('Warning: inconsisent dimensions between varName and the cell depth axis.', \
-                 var.shape[0], cellDepth.shape[0])
+                 var.shape[0], cell_depth.shape[0])
            null_result = np.ma.masked_where(True,0.)
            return null_result, null_result
         # Apply data mask to weighting mask
         cellArea.mask = var.mask
     var, cellArea = mask_latitude_bands(var,cellArea,geoLat,geoLon,region=region)
     #-- Land depth averaging and summation
-    if cellDepth is not None:
-      summed = np.ma.sum(var * cellArea * np.tile(cellDepth[:,None,None], (1,var.shape[1],var.shape[2])))
-      var = np.ma.average(var,axis=0,weights=cellDepth)
+    if cell_depth is not None:
+      summed = np.ma.sum(var * cellArea * np.tile(cell_depth[:,None,None], (1,var.shape[1],var.shape[2])))
+      var = np.ma.average(var,axis=0,weights=cell_depth)
       res = np.ma.sum(var*cellArea)/cellArea.sum()
       return res, summed
     else:
@@ -123,7 +123,7 @@ def write_sqlite_data(sqlfile,varName,fYear,varmean=None,varsum=None,component=N
     else:
       sql1 = 'create table if not exists '+varName+' (year integer primary key, value float)'
       sql2 = 'insert or replace into '+varName+' values('+fYear[:4]+','+str(varmean)+')'
-    time.sleep(random.random())
+    #time.sleep(random.random())
     conn = sqlite3.connect(sqlfile)
     c = conn.cursor()
     sqlres = c.execute(sql1)
@@ -150,7 +150,7 @@ def write_metadata(sqlfile,varName,attr,value):
         value = str('')
     sql1 = 'create table if not exists '+str(attr)+' (var text primary key, value text)'
     sql2 = 'insert or replace into '+str(attr)+' values("'+str(varName)+'","'+str(value)+'")'
-    time.sleep(random.random())
+    #time.sleep(random.random())
     conn = sqlite3.connect(sqlfile)
     c = conn.cursor()
     sqlres = c.execute(sql1)

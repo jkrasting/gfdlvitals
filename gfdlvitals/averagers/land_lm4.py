@@ -1,98 +1,278 @@
-import numpy as np
-import netCDF4
+"""Land LM4.1 Averaging Routines"""
+
 import multiprocessing
 import re
+
+import numpy as np
+
+from gfdlvitals.util.netcdf import extract_from_tar
+from gfdlvitals.util.netcdf import tar_member_exists
 
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as nctools
 
-__all__ = ['process_var','average']
+__all__ = ["drive", "process_var", "average"]
+
+
+def driver(fyear, tar, modules):
+    """Run the averager on LM4 land history data
+
+    Parameters
+    ----------
+    fyear : str
+        Year to process (YYYYMMDD)
+    tar : tarfile object
+        In-memory pointer to history tarfile
+    modules : dict
+        Dictionary of history nc streams (keys) and output db name (values)
+    """
+
+    members = [f"{fyear}.{x}.tile1.nc" for x in list(modules.keys())]
+    members = [tar_member_exists(tar, x) for x in members]
+
+    if any(members):
+        gs_tiles = [
+            extract_from_tar(tar, f"{fyear}.land_static.tile{x}.nc")
+            for x in range(1, 7)
+        ]
+
+        for module in list(modules.keys()):
+            if tar_member_exists(tar, f"{fyear}.{module}.tile1.nc"):
+                print(f"{fyear} - {module}")
+                data_tiles = [
+                    extract_from_tar(tar, f"{fyear}.{module}.tile{x}.nc")
+                    for x in range(1, 7)
+                ]
+                average(gs_tiles, data_tiles, fyear, "./", modules[module])
+                del data_tiles
+
+        del gs_tiles
+
 
 def process_var(variable):
-  data_tiles = [nctools.in_mem_nc(x) for x in variable.data_tiles]
+    """Function called by multiprocessing thread to process a variable
 
-  varshape = data_tiles[0].variables[variable.varname].shape
-  units     = gmeantools.extract_metadata(data_tiles[0],variable.varname,'units')
-  long_name = gmeantools.extract_metadata(data_tiles[0],variable.varname,'long_name')
-  cell_measures = gmeantools.extract_metadata(data_tiles[0],variable.varname,'cell_measures')
-  area_measure = gmeantools.parse_cell_measures(cell_measures,'area')
-  if (area_measure is not None) and (area_measure != 'area_ntrl'):
-    if (len(varshape) >= 3):
-      var = gmeantools.cube_sphere_aggregate(variable.varname,data_tiles)
-      var = np.ma.average(var,axis=0,weights=data_tiles[0].variables['average_DT'][:])
-  
-      if (len(varshape) == 3):
-        for reg in ['global','tropics','nh','sh']:
-          result, areaSum = gmeantools.area_mean(var,variable.area_types[area_measure],
-              variable.geoLat,variable.geoLon,region=reg)
-          if not hasattr(result,'mask'):
-            sqlfile = variable.outdir+'/'+variable.fYear+'.'+reg+'Ave'+variable.label+'.db'
-            gmeantools.write_metadata(sqlfile,variable.varname,'units',units)
-            gmeantools.write_metadata(sqlfile,variable.varname,'long_name',long_name)
-            gmeantools.write_metadata(sqlfile,variable.varname,'cell_measure',area_measure)
-            gmeantools.write_sqlite_data(sqlfile,variable.varname,variable.fYear[:4],result)
-            gmeantools.write_sqlite_data(sqlfile,area_measure,variable.fYear[:4],areaSum)
-  
-      elif (len(varshape) == 4):
-        if varshape[1] == cellDepth.shape[0]:
-          for reg in ['global','tropics','nh','sh']:
-            result, volumeSum = gmeantools.area_mean(var,area_types[area_measure],
-                variable.geoLat,variable.geoLon,region=reg,cellDepth=variable.cellDepth)
-            sqlfile = variable.outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db' 
-            gmeantools.write_metadata(sqlfile,variable.varname,'units',units)
-            gmeantools.write_metadata(sqlfile,variable.varname,'long_name',long_name)
-            gmeantools.write_metadata(sqlfile,variable.varname,'cell_measure',area_measure.replace('area','volume'))
-            gmeantools.write_sqlite_data(sqlfile,variable.varname,variable.fYear[:4],result)
-            gmeantools.write_sqlite_data(sqlfile,area_measure.replace('area','volume'),variable.fYear[:4],volumeSum)
+    Parameters
+    ----------
+    variables : RichVariable object
+        Input variable to process
+    """
+    data_tiles = [nctools.in_mem_nc(x) for x in variable.data_tiles]
 
-class rich_variable:
-    def __init__(self,varname,gs_tiles,data_tiles,fYear,outdir,label,geoLat,geoLon,area_types,cellDepth):
+    varshape = data_tiles[0].variables[variable.varname].shape
+    units = gmeantools.extract_metadata(data_tiles[0], variable.varname, "units")
+    long_name = gmeantools.extract_metadata(
+        data_tiles[0], variable.varname, "long_name"
+    )
+    cell_measures = gmeantools.extract_metadata(
+        data_tiles[0], variable.varname, "cell_measures"
+    )
+    area_measure = gmeantools.parse_cell_measures(cell_measures, "area")
+    if (area_measure is not None) and (area_measure != "area_ntrl"):
+        if len(varshape) >= 3:
+            var = gmeantools.cube_sphere_aggregate(variable.varname, data_tiles)
+            var = np.ma.average(
+                var, axis=0, weights=data_tiles[0].variables["average_DT"][:]
+            )
+
+            if len(varshape) == 3:
+                for reg in ["global", "tropics", "nh", "sh"]:
+                    result, area_sum = gmeantools.area_mean(
+                        var,
+                        variable.area_types[area_measure],
+                        variable.geolat,
+                        variable.geolon,
+                        region=reg,
+                    )
+                    if not hasattr(result, "mask"):
+                        sqlfile = (
+                            variable.outdir
+                            + "/"
+                            + variable.fyear
+                            + "."
+                            + reg
+                            + "Ave"
+                            + variable.label
+                            + ".db"
+                        )
+                        gmeantools.write_metadata(
+                            sqlfile, variable.varname, "units", units
+                        )
+                        gmeantools.write_metadata(
+                            sqlfile, variable.varname, "long_name", long_name
+                        )
+                        gmeantools.write_metadata(
+                            sqlfile, variable.varname, "cell_measure", area_measure
+                        )
+                        gmeantools.write_sqlite_data(
+                            sqlfile, variable.varname, variable.fyear[:4], result
+                        )
+                        gmeantools.write_sqlite_data(
+                            sqlfile, area_measure, variable.fyear[:4], area_sum
+                        )
+
+            elif len(varshape) == 4:
+                if varshape[1] == variable.cell_depth.shape[0]:
+                    for reg in ["global", "tropics", "nh", "sh"]:
+                        result, vol_sum = gmeantools.area_mean(
+                            var,
+                            variable.area_types[area_measure],
+                            variable.geolat,
+                            variable.geolon,
+                            region=reg,
+                            cell_depth=variable.cell_depth,
+                        )
+                        sqlfile = (
+                            variable.outdir
+                            + "/"
+                            + variable.fyear
+                            + "."
+                            + reg
+                            + "Ave"
+                            + variable.label
+                            + ".db"
+                        )
+                        gmeantools.write_metadata(
+                            sqlfile, variable.varname, "units", units
+                        )
+                        gmeantools.write_metadata(
+                            sqlfile, variable.varname, "long_name", long_name
+                        )
+                        gmeantools.write_metadata(
+                            sqlfile,
+                            variable.varname,
+                            "cell_measure",
+                            area_measure.replace("area", "volume"),
+                        )
+                        gmeantools.write_sqlite_data(
+                            sqlfile, variable.varname, variable.fyear[:4], result
+                        )
+                        gmeantools.write_sqlite_data(
+                            sqlfile,
+                            area_measure.replace("area", "volume"),
+                            variable.fyear[:4],
+                            vol_sum,
+                        )
+
+
+class RichVariable:
+    """Metadata-rich variable object"""
+
+    def __init__(
+        self,
+        varname,
+        gs_tiles,
+        data_tiles,
+        fyear,
+        outdir,
+        label,
+        geolat,
+        geolon,
+        area_types,
+        cell_depth,
+    ):
+        """Metadata-rich variable object
+
+        Parameters
+        ----------
+        varname : str
+            Variable name
+        gs_tiles : list of bytes
+            Grid-spec tiles
+        data_tiles : list of bytes
+            Data tiles
+        fyear : str
+            Year that is being processed
+        outdir : str
+            Output path directory
+        label : str
+            DB file name
+        geolat : np.ma.masked_array
+            Array of latitudes
+        geolon : np.ma.masked_array
+            Array of longitudes
+        area_types : dict
+            Dictionary of different land area types
+        cell_depth : np.ma.masked_array
+            Array of cell depths
+        """
         self.varname = varname
         self.gs_tiles = gs_tiles
         self.data_tiles = data_tiles
-        self.fYear = fYear
+        self.fyear = fyear
         self.outdir = outdir
         self.label = label
-        self.geoLat = geoLat
-        self.geoLon = geoLon
+        self.geolat = geolat
+        self.geolon = geolon
         self.area_types = area_types
-        self.cellDepth = cellDepth
+        self.cell_depth = cell_depth
+
+    def __str__(self):
+        return self.__class__.__name__
+
+    def __hash__(self):
+        return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
 
 
-def average(gs_tl,da_tl,year,out,lab):
+def average(gs_tl, da_tl, fyear, out, lab):
+    """Mid-level averaging routine
+
+    Parameters
+    ----------
+    gs_tl : list of bytes
+        Gridspec tiles
+    da_tl : list of bytes
+        Data tiles
+    fyear : str
+        Year being processed
+    out : str
+        Output path directory
+    lab : [type]
+        DB file name
+    """
     gs_tiles = [nctools.in_mem_nc(x) for x in gs_tl]
     data_tiles = [nctools.in_mem_nc(x) for x in da_tl]
 
-    for f in [ data_tiles, gs_tiles ]:
-      if 'geolat_t' in f[0].variables:
-        geoLat = gmeantools.cube_sphere_aggregate('geolat_t',data_tiles)
-        geoLon = gmeantools.cube_sphere_aggregate('geolon_t',data_tiles)
-        break
+    for land_file in [data_tiles, gs_tiles]:
+        if "geolat_t" in land_file[0].variables:
+            geolat = gmeantools.cube_sphere_aggregate("geolat_t", data_tiles)
+            geolon = gmeantools.cube_sphere_aggregate("geolon_t", data_tiles)
+            break
 
     area_types = {}
-    for f in [ data_tiles , gs_tiles ]:
-      for v in sorted(f[0].variables):
-        if re.match(r'.*_area',v) or re.match(r'area.*',v):
-          # for now, skip the area variables that depend on time
-          timedependent=False
-          for d in f[0].variables[v].dimensions:
-            timedependent=timedependent or f[0].dimensions[d].isunlimited()
-          if not timedependent:
-            if v not in area_types.keys():
-              area_types[v] = gmeantools.cube_sphere_aggregate(v,f)
+    for land_file in [data_tiles, gs_tiles]:
+        for variable in sorted(land_file[0].variables):
+            if re.match(r".*_area", variable) or re.match(r"area.*", variable):
+                # for now, skip the area variables that depend on time
+                timedependent = False
+                for dimension in land_file[0].variables[variable].dimensions:
+                    timedependent = (
+                        timedependent
+                        or land_file[0].dimensions[dimension].isunlimited()
+                    )
+                if not timedependent:
+                    if variable not in area_types.keys():
+                        area_types[variable] = gmeantools.cube_sphere_aggregate(
+                            variable, land_file
+                        )
 
-    depth = data_tiles[0].variables['zhalf_soil'][:]
-    cellDepth = []
-    for i in range(1,len(depth)):
-      thickness = round((depth[i] - depth[i-1]),2)
-      cellDepth.append(thickness)
-    cellDepth = np.array(cellDepth)
+    depth = data_tiles[0].variables["zhalf_soil"][:]
+    cell_depth = []
+    for i in range(1, len(depth)):
+        thickness = round((depth[i] - depth[i - 1]), 2)
+        cell_depth.append(thickness)
+    cell_depth = np.array(cell_depth)
 
     variables = list(data_tiles[0].variables.keys())
-    variables = [rich_variable(x,gs_tl,da_tl,year,out,lab,geoLat,geoLon,area_types,cellDepth) for x in variables]
+    variables = [
+        RichVariable(
+            x, gs_tl, da_tl, fyear, out, lab, geolat, geolon, area_types, cell_depth
+        )
+        for x in variables
+    ]
 
-    [x.close() for x in gs_tiles]
-    [x.close() for x in data_tiles]
+    _ = [x.close() for x in gs_tiles]
+    _ = [x.close() for x in data_tiles]
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    pool.map(process_var,variables)
+    pool.map(process_var, variables)
