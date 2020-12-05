@@ -1,48 +1,49 @@
 import numpy as np
+import netCDF4
 import multiprocessing
 
 import gfdlvitals.util.gmeantools as gmeantools
+import gfdlvitals.util.netcdf as nctools
 
 __all__ = ['process_var','average']
 
-def process_var(v):
-    if fdata.variables[v].shape == cellArea.shape:
-      units     = gmeantools.extract_metadata(fdata,v,'units')
-      long_name = gmeantools.extract_metadata(fdata,v,'long_name')
-      data = fdata.variables[v][:]
+def process_var(variable):
+    fdata = nctools.in_mem_nc(variable.fdata)
+    if fdata.variables[variable.varname].shape == variable.cellArea.shape:
+      units     = gmeantools.extract_metadata(fdata,variable.varname,'units')
+      long_name = gmeantools.extract_metadata(fdata,variable.varname,'long_name')
+      data = fdata.variables[variable.varname][:]
       for reg in ['global','nh','sh']:
-        sqlite_out = outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db'
-        _v, _area = gmeantools.mask_latitude_bands(data,cellArea,geoLat,geoLon,region=reg)
+        sqlite_out = variable.outdir+'/'+variable.fYear+'.'+reg+'Ave'+variable.label+'.db'
+        _v, _area = gmeantools.mask_latitude_bands(data,variable.cellArea,variable.geoLat,variable.geoLon,region=reg)
         _v = np.ma.sum((_v*_area),axis=(-1,-2))/np.ma.sum(_area,axis=(-1,-2))
-        gmeantools.write_metadata(sqlite_out,v,'units',units)
-        gmeantools.write_metadata(sqlite_out,v,'long_name',long_name)
-        gmeantools.write_sqlite_data(sqlite_out,v+'_mean',fYear[:4],np.ma.average(_v,axis=0,weights=average_DT))
-        gmeantools.write_sqlite_data(sqlite_out,v+'_max', fYear[:4],np.ma.max(_v))
-        gmeantools.write_sqlite_data(sqlite_out,v+'_min', fYear[:4],np.ma.min(_v))
+        gmeantools.write_metadata(sqlite_out,variable.varname,'units',units)
+        gmeantools.write_metadata(sqlite_out,variable.varname,'long_name',long_name)
+        gmeantools.write_sqlite_data(sqlite_out,variable.varname+'_mean',variable.fYear[:4],np.ma.average(_v,axis=0,weights=variable.average_DT))
+        gmeantools.write_sqlite_data(sqlite_out,variable.varname+'_max', variable.fYear[:4],np.ma.max(_v))
+        gmeantools.write_sqlite_data(sqlite_out,variable.varname+'_min', variable.fYear[:4],np.ma.min(_v))
+    fdata.close()
 
+class rich_variable:
+    def __init__(self,varname,fgs,fdata,fYear,outdir,label,geoLat,geoLon,cellArea,average_DT):
+        self.varname = varname
+        self.fgs = fgs
+        self.fdata = fdata
+        self.fYear = fYear
+        self.outdir = outdir
+        self.label = label
+        self.geoLat = geoLat
+        self.geoLon = geoLon
+        self.cellArea = cellArea
+        self.average_DT = average_DT
 
 def average(f1,f2,year,out,lab):
-    global fgs
-    global fdata
-    global fYear
-    global outdir
-    global label
- 
-    fgs = f1
-    fdata = f2
-    fYear = year
-    outdir = out
-    label = lab
-
-    # geometry
-    global geoLon
-    global geoLat
-    global cellArea
+    fgs = nctools.in_mem_nc(f1)
+    fdata = nctools.in_mem_nc(f2)
 
     geoLon = fgs.variables['GEOLON'][:]
     geoLat = fgs.variables['GEOLAT'][:]
  
-    global average_DT   
     average_DT = fdata.variables['average_DT'][:]
     
     if 'CELL_AREA' in fgs.variables.keys():
@@ -65,7 +66,7 @@ def average(f1,f2,year,out,lab):
     cellArea = np.tile(cellArea[None,:], (concentration.shape[0],1,1))
     
     for reg in ['global','nh','sh']:
-      sqlite_out = outdir+'/'+fYear+'.'+reg+'Ave'+label+'.db'
+      sqlite_out = out+'/'+year+'.'+reg+'Ave'+lab+'.db'
       vars = []
       # area and extent in million square km
       _conc, _area = gmeantools.mask_latitude_bands(concentration,cellArea,
@@ -74,12 +75,18 @@ def average(f1,f2,year,out,lab):
       vars.append(('extent',(np.ma.sum((np.ma.where(np.greater(_conc,0.15),
                       _area,0.)),axis=(-1,-2))*1.e-12)))
       for v in vars:
-        gmeantools.write_sqlite_data(sqlite_out,v[0]+'_mean',fYear[:4],
+        gmeantools.write_sqlite_data(sqlite_out,v[0]+'_mean',year[:4],
             np.ma.average(v[1],weights=average_DT))
-        gmeantools.write_sqlite_data(sqlite_out,v[0]+'_max', fYear[:4],
+        gmeantools.write_sqlite_data(sqlite_out,v[0]+'_max', year[:4],
             np.ma.max(v[1]))
-        gmeantools.write_sqlite_data(sqlite_out,v[0]+'_min', fYear[:4],
+        gmeantools.write_sqlite_data(sqlite_out,v[0]+'_min', year[:4],
             np.ma.min(v[1]))
-    
+
+    variables = list(fdata.variables.keys())
+    variables = [rich_variable(x,f1,f2,year,out,lab,geoLat,geoLon,cellArea,average_DT) for x in variables]
+
+    fgs.close()
+    fdata.close()
+
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    pool.map(process_var,fdata.variables.keys())
+    pool.map(process_var,variables)
