@@ -11,6 +11,7 @@ import gfdlvitals.util.netcdf as nctools
 
 __all__ = ["routines"]
 
+
 def routines(args, infile):
 
     # -- Open the tarfile
@@ -28,22 +29,22 @@ def routines(args, infile):
         "atmos_month_aer": "AtmosAer",
         "aerosol_month_cmip": "AeroCMIP",
     }
-    averagers.cubesphere.driver(fYear,tar,modules)
+    averagers.cubesphere.driver(fYear, tar, modules)
 
     # -- Land Fields
     modules = {"land_month": "Land"}
-    averagers.land_lm4.driver(fYear,tar,modules)
+    averagers.land_lm4.driver(fYear, tar, modules)
 
     # -- Ice
     modules = {"ice_month": "Ice"}
-    averagers.ice.driver(fYear,tar,modules)
-    
+    averagers.ice.driver(fYear, tar, modules)
+
     # -- Ocean
     fname = f"{fYear}.ocean_scalar_annual.nc"
-    if tar_member_exists(tar,fname):
+    if tar_member_exists(tar, fname):
         print(f"{fYear} - ocean_scalar_annual")
         fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
-        extract_ocean_scalar.MOM6(fdata, fYear, "./")
+        extract_ocean_scalar.mom6(fdata, fYear, "./")
         fdata.close()
 
     # -- AMOC
@@ -52,7 +53,7 @@ def routines(args, infile):
         ocean_hgrid = extract_from_tar(gs_tar, "ocean_hgrid.nc", ncfile=True)
         topog = extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
         fname = f"{fYear}.ocean_annual_z.nc"
-        if tar_member_exists(tar,fname):
+        if tar_member_exists(tar, fname):
             vhFile = extract_from_tar(tar, fname, ncfile=True)
             diags.amoc.MOM6(vhFile, ocean_hgrid, topog, fYear, "./", "Ocean")
         _ = [x.close() for x in [ocean_hgrid, topog, vhFile, gs_tar]]

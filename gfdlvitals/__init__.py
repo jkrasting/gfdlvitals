@@ -1,3 +1,5 @@
+"""gfdlvitals - a package for computing global mean metrics"""
+
 from . import averagers
 from . import models
 from . import util

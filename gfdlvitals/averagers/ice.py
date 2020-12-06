@@ -72,7 +72,7 @@ def process_var(variable):
                 + ".db"
             )
             _v, _area = gmeantools.mask_latitude_bands(
-                data, variable.cell_area, variable.geolat, variable.geolon, region=reg
+                data, variable.cell_area, variable.geolat, region=reg
             )
             _v = np.ma.sum((_v * _area), axis=(-1, -2)) / np.ma.sum(
                 _area, axis=(-1, -2)
@@ -204,7 +204,7 @@ def average(grid_file, data_file, fyear, out, lab):
         variables = []
         # area and extent in million square km
         _conc, _area = gmeantools.mask_latitude_bands(
-            concentration, cell_area, geolat, geolon, region=reg
+            concentration, cell_area, geolat, region=reg
         )
         variables.append(
             ("area", (np.ma.sum((_conc * _area), axis=(-1, -2)) * 1.0e-12))
