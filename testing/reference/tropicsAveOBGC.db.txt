@@ -1,0 +1,14 @@
+INSERT INTO area VALUES(1,189739899999999.99999);
+INSERT INTO area VALUES(2,189739899999999.99999);
+INSERT INTO dic_stf_gas VALUES(1,-1.2265032202644441477e-08);
+INSERT INTO dic_stf_gas VALUES(2,-1.3316663534633522524e-08);
+INSERT INTO dissic VALUES(1,2.0253393947090061466);
+INSERT INTO dissic VALUES(2,2.0236786628690741629);
+INSERT INTO long_name VALUES('dic_stf_gas','Gas exchange flux of dic into Ocean Surface');
+INSERT INTO long_name VALUES('dissic','Surface Dissolved Inorganic Carbon Concentration');
+INSERT INTO long_name VALUES('wc_vert_int_dic','Dissolved inorganic carbon vertical integral');
+INSERT INTO units VALUES('dic_stf_gas','mole/m^2/sec');
+INSERT INTO units VALUES('dissic','mol m-3');
+INSERT INTO units VALUES('wc_vert_int_dic','mol m-2');
+INSERT INTO wc_vert_int_dic VALUES(1,9071.2762554005385027);
+INSERT INTO wc_vert_int_dic VALUES(2,9071.2953632415719764);

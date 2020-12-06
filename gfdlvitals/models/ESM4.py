@@ -47,6 +47,21 @@ def routines(args, infile):
         extract_ocean_scalar.mom6(fdata, fYear, "./")
         fdata.close()
 
+    # -- OBGC
+    modules = {
+        "ocean_cobalt_sfc": "OBGC",
+        "ocean_cobalt_misc": "OBGC",
+        "ocean_cobalt_tracers_year": "OBGC",
+        "ocean_cobalt_tracers_int": "OBGC",
+        "ocean_bling": "OBGC",
+        "ocean_bling_cmip6_omip_2d": "OBGC",
+        "ocean_bling_cmip6_omip_rates_year_z": "OBGC",
+        "ocean_bling_cmip6_omip_sfc": "OBGC",
+        "ocean_bling_cmip6_omip_tracers_month_z": "OBGC",
+        "ocean_bling_cmip6_omip_tracers_year_z": "OBGC",
+    }
+    averagers.tripolar.driver(fYear, tar, modules)
+
     # -- AMOC
     if args.gridspec is not None:
         gs_tar = tarfile.open(args.gridspec)
@@ -61,55 +76,7 @@ def routines(args, infile):
     # -- Close out the tarfile handle
     tar.close()
 
-    # # -- COBALT
-    # label = "COBALT"
-    # modules = [
-    #     "ocean_cobalt_sfc",
-    #     "ocean_cobalt_misc",
-    #     "ocean_cobalt_tracers_year",
-    #     "ocean_cobalt_tracers_int",
-    # ]
-    # fgs = None
-    # if modifier + fYear + ".ocean_static.nc" in members:
-    #     fgs = extract_from_tar(tar, modifier + fYear + ".ocean_static.nc")
-    # elif modifier + fYear + ".ocean_month.nc" in members:
-    #     fgs = extract_from_tar(tar, modifier + fYear + ".ocean_month.nc")
-    # if fgs is not None:
-    #     for module in modules:
-    #         fname = modifier + fYear + "." + module + ".nc"
-    #         if fname in members:
-    #             fdata = extract_from_tar(tar, fname)
-    #             print(fname)
-    #             averagers.tripolar.average(fgs, fdata, fYear, "./", label)
-    #             fdata.close()
-    #     fgs.close()
-
-    # # -- BLING
-    # label = "BLING"
-    # modules = [
-    #     "ocean_bling",
-    #     "ocean_bling_cmip6_omip_2d",
-    #     "ocean_bling_cmip6_omip_rates_year_z",
-    #     "ocean_bling_cmip6_omip_sfc",
-    #     "ocean_bling_cmip6_omip_tracers_month_z",
-    #     "ocean_bling_cmip6_omip_tracers_year_z",
-    # ]
-    # fgs = None
-    # if modifier + fYear + ".ocean_static.nc" in members:
-    #     fgs = extract_from_tar(tar, modifier + fYear + ".ocean_static.nc")
-    # elif modifier + fYear + ".ocean_month.nc" in members:
-    #     fgs = extract_from_tar(tar, modifier + fYear + ".ocean_month.nc")
-    # if fgs is not None:
-    #     for module in modules:
-    #         fname = modifier + fYear + "." + module + ".nc"
-    #         if fname in members:
-    #             fdata = extract_from_tar(tar, fname)
-    #             print(fname)
-    #             averagers.tripolar.average(fgs, fdata, fYear, "./", label)
-    #             fdata.close()
-    #     fgs.close()
     # -- Do performance timing
-
     try:
         infile = infile.replace("/history/", "/ascii/")
         infile = infile.replace(".nc.tar", ".ascii_out.tar")

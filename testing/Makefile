@@ -1,6 +1,7 @@
-DB = globalAveAtmos.db globalAveIce.db globalAveLand.db globalAveOcean.db \
-     nhAveAtmos.db nhAveIce.db nhAveLand.db shAveAtmos.db shAveIce.db \
-     shAveLand.db tropicsAveAtmos.db tropicsAveLand.db
+DB = globalAveAtmos.db globalAveIce.db globalAveLand.db globalAveOBGC.db globalAveOcean.db \
+     nhAveAtmos.db nhAveIce.db nhAveLand.db nhAveOBGC.db \
+     shAveAtmos.db shAveIce.db shAveLand.db shAveOBGC.db \
+     tropicsAveAtmos.db tropicsAveLand.db tropicsAveOBGC.db
 
 OBJECTS=$(patsubst %, db/%, $(DB))
 

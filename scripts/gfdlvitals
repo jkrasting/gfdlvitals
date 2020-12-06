@@ -69,7 +69,7 @@ def process_year(args,infile):
     if not os.path.exists(args.outdir):
       os.makedirs(args.outdir)
     for reg in ['global','nh','sh','tropics']:
-      for component in ['Land','Atmos','Ocean','Ice','TOPAZ','BLING','Timing']:
+      for component in ['Land','Atmos','Ocean','Ice','TOPAZ','COBALT','BLING','OBGC','Timing']:
         if os.path.exists(fYear+'.'+reg+'Ave'+component+'.db'):
           if not os.path.exists(args.outdir+'/'+reg+'Ave'+component+'.db'):
             shutil.copyfile(fYear+'.'+reg+'Ave'+component+'.db',args.outdir+\
