@@ -7,6 +7,7 @@ import numpy as np
 
 from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.netcdf import tar_member_exists
+from gfdlvitals.util.average import RichVariable
 
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as nctools
@@ -191,10 +192,6 @@ class RichVariable:
             Array of latitudes
         geolon : np.ma.masked_array
             Array of longitudes
-        area_types : dict
-            Dictionary of different land area types
-        cell_depth : np.ma.masked_array
-            Array of cell depths
         """
         self.varname = varname
         self.gs_tiles = gs_tiles
@@ -214,14 +211,14 @@ class RichVariable:
         return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
 
 
-def average(gs_tl, da_tl, fyear, out, lab):
+def average(grid_file, data_file, fyear, out, lab):
     """Mid-level averaging routine
 
     Parameters
     ----------
-    gs_tl : list of bytes
+    grid_file : list of bytes
         Gridspec tiles
-    da_tl : list of bytes
+    data_file : list of bytes
         Data tiles
     fyear : str
         Year being processed
@@ -230,17 +227,17 @@ def average(gs_tl, da_tl, fyear, out, lab):
     lab : [type]
         DB file name
     """
-    gs_tiles = [nctools.in_mem_nc(x) for x in gs_tl]
-    data_tiles = [nctools.in_mem_nc(x) for x in da_tl]
+    _grid_file = [nctools.in_mem_nc(x) for x in grid_file]
+    _data_file = [nctools.in_mem_nc(x) for x in data_file]
 
-    for land_file in [data_tiles, gs_tiles]:
+    for land_file in [_data_file, _grid_file]:
         if "geolat_t" in land_file[0].variables:
-            geolat = gmeantools.cube_sphere_aggregate("geolat_t", data_tiles)
-            geolon = gmeantools.cube_sphere_aggregate("geolon_t", data_tiles)
+            geolat = gmeantools.cube_sphere_aggregate("geolat_t", _data_file)
+            geolon = gmeantools.cube_sphere_aggregate("geolon_t", _data_file)
             break
 
     area_types = {}
-    for land_file in [data_tiles, gs_tiles]:
+    for land_file in [_data_file, _grid_file]:
         for variable in sorted(land_file[0].variables):
             if re.match(r".*_area", variable) or re.match(r"area.*", variable):
                 # for now, skip the area variables that depend on time
@@ -256,23 +253,32 @@ def average(gs_tl, da_tl, fyear, out, lab):
                             variable, land_file
                         )
 
-    depth = data_tiles[0].variables["zhalf_soil"][:]
+    depth = _data_file[0].variables["zhalf_soil"][:]
     cell_depth = []
     for i in range(1, len(depth)):
         thickness = round((depth[i] - depth[i - 1]), 2)
         cell_depth.append(thickness)
     cell_depth = np.array(cell_depth)
 
-    variables = list(data_tiles[0].variables.keys())
+    variables = list(_data_file[0].variables.keys())
     variables = [
         RichVariable(
-            x, gs_tl, da_tl, fyear, out, lab, geolat, geolon, area_types, cell_depth
+            x,
+            grid_file,
+            data_file,
+            fyear,
+            out,
+            lab,
+            geolat,
+            geolon,
+            area_types=area_types,
+            cell_depth=cell_depth,
         )
         for x in variables
     ]
 
-    _ = [x.close() for x in gs_tiles]
-    _ = [x.close() for x in data_tiles]
+    _ = [x.close() for x in _grid_file]
+    _ = [x.close() for x in _data_file]
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     pool.map(process_var, variables)

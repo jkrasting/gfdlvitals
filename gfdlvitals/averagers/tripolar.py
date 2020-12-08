@@ -6,6 +6,7 @@ import numpy as np
 
 from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.netcdf import tar_member_exists
+from gfdlvitals.util.average import RichVariable
 
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as nctools
@@ -30,7 +31,7 @@ def driver(fyear, tar, modules):
 
     if any(members):
         staticname = f"{fyear}.ocean_static.nc"
-        fgs = (
+        grid_file = (
             extract_from_tar(tar, staticname)
             if tar_member_exists(tar, staticname)
             else extract_from_tar(tar, f"{fyear}.ocean_month.nc")
@@ -41,10 +42,10 @@ def driver(fyear, tar, modules):
             if tar_member_exists(tar, fname):
                 print(f"{fyear} - {module}")
                 fdata = extract_from_tar(tar, fname)
-                average(fgs, fdata, fyear, "./", modules[module])
+                average(grid_file, fdata, fyear, "./", modules[module])
                 del fdata
 
-        del fgs
+        del grid_file
 
 
 def process_var(variable):
@@ -55,7 +56,7 @@ def process_var(variable):
     variables : RichVariable object
         Input variable to process
     """
-    fdata = nctools.in_mem_nc(variable.fdata)
+    fdata = nctools.in_mem_nc(variable.data_file)
     units = gmeantools.extract_metadata(fdata, variable.varname, "units")
     long_name = gmeantools.extract_metadata(fdata, variable.varname, "long_name")
     ndims = len(fdata.variables[variable.varname].shape)
@@ -94,61 +95,6 @@ def process_var(variable):
             gmeantools.write_sqlite_data(sqlfile, "area", variable.fyear[:4], area_sum)
 
 
-class RichVariable:
-    """Metadata-rich variable object"""
-
-    def __init__(
-        self,
-        varname,
-        fgs,
-        fdata,
-        fyear,
-        outdir,
-        label,
-        geolat,
-        geolon,
-        cell_area,
-    ):
-        """Metadata-rich variable object
-
-        Parameters
-        ----------
-        varname : str
-            Variable name
-        fgs : bytes object
-            Gridspec NetCDF file
-        fdata : bytes object
-            Input data file
-        fyear : str
-            Year that is being processed
-        outdir : str
-            Output path directory
-        label : str
-            DB file name
-        geolat : np.ma.masked_array
-            Array of latitudes
-        geolon : np.ma.masked_array
-            Array of longitudes
-        cell_area : np.ma.masked_array
-            Array of cell areas
-        """
-        self.varname = varname
-        self.fgs = fgs
-        self.fdata = fdata
-        self.fyear = fyear
-        self.outdir = outdir
-        self.label = label
-        self.geolat = geolat
-        self.geolon = geolon
-        self.cell_area = cell_area
-
-    def __str__(self):
-        return self.__class__.__name__
-
-    def __hash__(self):
-        return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
-
-
 def average(grid_file, data_file, fyear, out, lab):
     """Mid-level averaging routine
 
@@ -166,10 +112,10 @@ def average(grid_file, data_file, fyear, out, lab):
         DB file name
     """
 
-    fgs = nctools.in_mem_nc(grid_file)
-    fdata = nctools.in_mem_nc(data_file)
+    _grid_file = nctools.in_mem_nc(grid_file)
+    _data_file = nctools.in_mem_nc(data_file)
 
-    varlist = list(fgs.variables.keys())
+    varlist = list(_grid_file.variables.keys())
 
     assert ("geolat" in varlist) or (
         "geolat_t" in varlist
@@ -182,22 +128,22 @@ def average(grid_file, data_file, fyear, out, lab):
     ), "Unable to determine ocean cell area"
 
     geolat = (
-        fgs.variables["geolat"][:]
+        _grid_file.variables["geolat"][:]
         if "geolat" in varlist
-        else fgs.variables["geolat_t"][:]
+        else _grid_file.variables["geolat_t"][:]
     )
     geolon = (
-        fgs.variables["geolon"][:]
+        _grid_file.variables["geolon"][:]
         if "geolon" in varlist
-        else fgs.variables["geolon_t"][:]
+        else _grid_file.variables["geolon_t"][:]
     )
     cell_area = (
-        fgs.variables["areacello"][:]
+        _grid_file.variables["areacello"][:]
         if "areacello" in varlist
-        else fgs.variables["area_t"][:]
+        else _grid_file.variables["area_t"][:]
     )
 
-    variables = list(fdata.variables.keys())
+    variables = list(_data_file.variables.keys())
     variables = [
         RichVariable(
             x,
@@ -213,8 +159,8 @@ def average(grid_file, data_file, fyear, out, lab):
         for x in variables
     ]
 
-    fgs.close()
-    fdata.close()
+    _grid_file.close()
+    _data_file.close()
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     pool.map(process_var, variables)

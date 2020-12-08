@@ -5,6 +5,7 @@ import multiprocessing
 import numpy as np
 
 from gfdlvitals.util.netcdf import extract_from_tar
+from gfdlvitals.util.average import RichVariable
 from gfdlvitals.util.netcdf import tar_member_exists
 
 import gfdlvitals.util.gmeantools as gmeantools
@@ -55,7 +56,7 @@ def process_var(variable):
     variables : RichVariable object
         Input variable to process
     """
-    fdata = nctools.in_mem_nc(variable.fdata)
+    fdata = nctools.in_mem_nc(variable.data_file)
     if fdata.variables[variable.varname].shape == variable.cell_area.shape:
         units = gmeantools.extract_metadata(fdata, variable.varname, "units")
         long_name = gmeantools.extract_metadata(fdata, variable.varname, "long_name")
@@ -96,65 +97,6 @@ def process_var(variable):
     fdata.close()
 
 
-class RichVariable:
-    """Metadata-rich variable object"""
-
-    def __init__(
-        self,
-        varname,
-        fgs,
-        fdata,
-        fyear,
-        outdir,
-        label,
-        geolat,
-        geolon,
-        cell_area,
-        average_dt,
-    ):
-        """Metadata-rich variable object
-
-        Parameters
-        ----------
-        varname : str
-            Variable name
-        gs_tiles : list of bytes
-            Grid-spec tiles
-        data_tiles : list of bytes
-            Data tiles
-        fyear : str
-            Year that is being processed
-        outdir : str
-            Output path directory
-        label : str
-            DB file name
-        geolat : np.ma.masked_array
-            Array of latitudes
-        geolon : np.ma.masked_array
-            Array of longitudes
-        cell_area : np.ma.masked_array
-            Array of cell areas
-        average_dt : np.ma.masked_array
-            Array of time averaging period
-        """
-        self.varname = varname
-        self.fgs = fgs
-        self.fdata = fdata
-        self.fyear = fyear
-        self.outdir = outdir
-        self.label = label
-        self.geolat = geolat
-        self.geolon = geolon
-        self.cell_area = cell_area
-        self.average_dt = average_dt
-
-    def __str__(self):
-        return self.__class__.__name__
-
-    def __hash__(self):
-        return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
-
-
 def average(grid_file, data_file, fyear, out, lab):
     """Mid-level averaging routine
 
@@ -172,26 +114,28 @@ def average(grid_file, data_file, fyear, out, lab):
         DB file name
     """
 
-    fgs = nctools.in_mem_nc(grid_file)
-    fdata = nctools.in_mem_nc(data_file)
+    _grid_file = nctools.in_mem_nc(grid_file)
+    _data_file = nctools.in_mem_nc(data_file)
 
-    geolon = fgs.variables["GEOLON"][:]
-    geolat = fgs.variables["GEOLAT"][:]
+    geolon = _grid_file.variables["GEOLON"][:]
+    geolat = _grid_file.variables["GEOLAT"][:]
 
-    average_dt = fdata.variables["average_DT"][:]
+    average_dt = _data_file.variables["average_DT"][:]
 
-    if "CELL_AREA" in fgs.variables.keys():
+    if "CELL_AREA" in _grid_file.variables.keys():
         earth_radius = 6371.0e3  # Radius of the Earth in 'm'
-        cell_area = fgs.variables["CELL_AREA"][:] * (4.0 * np.pi * (earth_radius ** 2))
-    elif "area" in fgs.variables.keys():
-        cell_area = fgs.variables["area"][:]
+        cell_area = _grid_file.variables["CELL_AREA"][:] * (
+            4.0 * np.pi * (earth_radius ** 2)
+        )
+    elif "area" in _grid_file.variables.keys():
+        cell_area = _grid_file.variables["area"][:]
     else:
         print("FATAL: unable to determine cell area used in ice model")
 
-    if "siconc" in fdata.variables.keys():
-        concentration = fdata.variables["siconc"][:]
-    elif "CN" in fdata.variables.keys():
-        concentration = np.ma.sum(fdata.variables["CN"][:], axis=-3)
+    if "siconc" in _data_file.variables.keys():
+        concentration = _data_file.variables["siconc"][:]
+    elif "CN" in _data_file.variables.keys():
+        concentration = np.ma.sum(_data_file.variables["CN"][:], axis=-3)
     else:
         print("FATAL: unable to determine ice concentration")
 
@@ -235,7 +179,7 @@ def average(grid_file, data_file, fyear, out, lab):
                 sqlite_out, vname[0] + "_min", fyear[:4], np.ma.min(vname[1])
             )
 
-    variables = list(fdata.variables.keys())
+    variables = list(_data_file.variables.keys())
     variables = [
         RichVariable(
             x,
@@ -247,13 +191,13 @@ def average(grid_file, data_file, fyear, out, lab):
             geolat,
             geolon,
             cell_area,
-            average_dt,
+            average_dt=average_dt,
         )
         for x in variables
     ]
 
-    fgs.close()
-    fdata.close()
+    _grid_file.close()
+    _data_file.close()
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     pool.map(process_var, variables)

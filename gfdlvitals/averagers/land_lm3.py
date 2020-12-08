@@ -6,6 +6,7 @@ import numpy as np
 
 from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.netcdf import tar_member_exists
+from gfdlvitals.util.average import RichVariable
 
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as nctools
@@ -95,44 +96,6 @@ def process_var(variable):
                 )
 
 
-class RichVariable:
-    """Metadata-rich variable class"""
-
-    def __init__(
-        self,
-        varname,
-        grid_file,
-        data_file,
-        fyear,
-        outdir,
-        label,
-        geolat,
-        geolon,
-        cell_area,
-        cell_frac,
-        soil_area,
-        soil_frac,
-    ):
-        self.varname = varname
-        self.grid_file = grid_file
-        self.data_file = data_file
-        self.fyear = fyear
-        self.outdir = outdir
-        self.label = label
-        self.geolat = geolat
-        self.geolon = geolon
-        self.cell_area = cell_area
-        self.cell_frac = cell_frac
-        self.soil_area = soil_area
-        self.soil_frac = soil_frac
-
-    def __str__(self):
-        return self.__class__.__name__
-
-    def __hash__(self):
-        return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
-
-
 def average(grid_file, data_file, fyear, out, lab):
     """Mid-level averaging routine
 
@@ -182,10 +145,10 @@ def average(grid_file, data_file, fyear, out, lab):
             lab,
             geolat,
             geolon,
-            cell_area,
-            cell_frac,
-            soil_area,
-            soil_frac,
+            cell_area=cell_area,
+            cell_frac=cell_frac,
+            soil_area=soil_area,
+            soil_frac=soil_frac,
         )
         for x in variables
     ]

@@ -5,6 +5,7 @@ import multiprocessing
 import numpy as np
 
 from gfdlvitals.util.netcdf import extract_from_tar
+from gfdlvitals.util.average import RichVariable
 from gfdlvitals.util.netcdf import tar_member_exists
 
 import gfdlvitals.util.gmeantools as gmeantools
@@ -30,21 +31,21 @@ def driver(fyear, tar, modules):
     members = [tar_member_exists(tar, x) for x in members]
 
     if any(members):
-        gs_tiles = [
+        grid_file = [
             extract_from_tar(tar, f"{fyear}.grid_spec.tile{x}.nc") for x in range(1, 7)
         ]
 
         for module in list(modules.keys()):
             if tar_member_exists(tar, f"{fyear}.{module}.tile1.nc"):
                 print(f"{fyear} - {module}")
-                data_tiles = [
+                data_file = [
                     extract_from_tar(tar, f"{fyear}.{module}.tile{x}.nc")
                     for x in range(1, 7)
                 ]
-                average(gs_tiles, data_tiles, fyear, "./", modules[module])
-                del data_tiles
+                average(grid_file, data_file, fyear, "./", modules[module])
+                del data_file
 
-        del gs_tiles
+        del grid_file
 
 
 def process_var(variables):
@@ -55,15 +56,15 @@ def process_var(variables):
     variables : RichVariable object
         Input variable to process
     """
-    data_tiles = [nctools.in_mem_nc(x) for x in variables.data_tiles]
-    units = gmeantools.extract_metadata(data_tiles[0], variables.varname, "units")
+    data_file = [nctools.in_mem_nc(x) for x in variables.data_file]
+    units = gmeantools.extract_metadata(data_file[0], variables.varname, "units")
     long_name = gmeantools.extract_metadata(
-        data_tiles[0], variables.varname, "long_name"
+        data_file[0], variables.varname, "long_name"
     )
-    if len(data_tiles[0].variables[variables.varname].shape) == 3:
-        var = gmeantools.cube_sphere_aggregate(variables.varname, data_tiles)
+    if len(data_file[0].variables[variables.varname].shape) == 3:
+        var = gmeantools.cube_sphere_aggregate(variables.varname, data_file)
         var = np.ma.average(
-            var, axis=0, weights=data_tiles[0].variables["average_DT"][:]
+            var, axis=0, weights=data_file[0].variables["average_DT"][:]
         )
         for reg in ["global", "tropics", "nh", "sh"]:
             result, area_sum = gmeantools.area_mean(
@@ -87,7 +88,7 @@ def process_var(variables):
                 sqlfile, variables.varname, variables.fyear[:4], result
             )
             gmeantools.write_sqlite_data(sqlfile, "area", variables.fyear[:4], area_sum)
-    _ = [x.close() for x in data_tiles]
+    _ = [x.close() for x in data_file]
 
 
 class RichVariable:
@@ -96,8 +97,8 @@ class RichVariable:
     def __init__(
         self,
         varname,
-        gs_tiles,
-        data_tiles,
+        grid_file,
+        data_file,
         fyear,
         outdir,
         label,
@@ -111,9 +112,9 @@ class RichVariable:
         ----------
         varname : str
             Variable name
-        gs_tiles : list of bytes
+        grid_file : list of bytes
             Grid-spec tiles
-        data_tiles : list of bytes
+        data_file : list of bytes
             Data tiles
         fyear : str
             Year that is being processed
@@ -129,8 +130,8 @@ class RichVariable:
             Array of cell areas
         """
         self.varname = varname
-        self.gs_tiles = gs_tiles
-        self.data_tiles = data_tiles
+        self.grid_file = grid_file
+        self.data_file = data_file
         self.fyear = fyear
         self.outdir = outdir
         self.label = label
@@ -145,14 +146,14 @@ class RichVariable:
         return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
 
 
-def average(gs_tl, da_tl, fyear, out, lab):
+def average(grid_file, data_file, fyear, out, lab):
     """Mid-level averaging routine
 
     Parameters
     ----------
-    gs_tl : list of bytes
+    grid_file : list of bytes
         Gridspec tiles
-    da_tl : list of bytes
+    data_file : list of bytes
         Data tiles
     fyear : str
         Year being processed
@@ -162,17 +163,19 @@ def average(gs_tl, da_tl, fyear, out, lab):
         DB file name
     """
 
-    gs_tiles = [nctools.in_mem_nc(x) for x in gs_tl]
+    _grid_file = [nctools.in_mem_nc(x) for x in grid_file]
 
-    geolat = gmeantools.cube_sphere_aggregate("grid_latt", gs_tiles)
-    geolon = gmeantools.cube_sphere_aggregate("grid_lont", gs_tiles)
-    cell_area = gmeantools.cube_sphere_aggregate("area", gs_tiles)
+    geolat = gmeantools.cube_sphere_aggregate("grid_latt", _grid_file)
+    geolon = gmeantools.cube_sphere_aggregate("grid_lont", _grid_file)
+    cell_area = gmeantools.cube_sphere_aggregate("area", _grid_file)
 
-    _ = [x.close() for x in gs_tiles]
+    _ = [x.close() for x in _grid_file]
 
-    variables = list(nctools.in_mem_nc(da_tl[0]).variables.keys())
+    variables = list(nctools.in_mem_nc(data_file[0]).variables.keys())
     variables = [
-        RichVariable(x, gs_tl, da_tl, fyear, out, lab, geolat, geolon, cell_area)
+        RichVariable(
+            x, grid_file, data_file, fyear, out, lab, geolat, geolon, cell_area
+        )
         for x in variables
     ]
 
