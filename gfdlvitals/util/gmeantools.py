@@ -4,6 +4,7 @@ import pickle
 import sqlite3
 
 import numpy as np
+import pkg_resources as pkgr
 
 __all__ = [
     "get_web_vars_dict",
@@ -26,11 +27,12 @@ def get_web_vars_dict():
     dict
         LM3 variable module mappings and metadata
     """
+    mapping_file = pkgr.resource_filename(
+        "gfdlvitals", "resources/LM3_variable_dictionary.pkl"
+    )
     return pickle.load(
         open(
-            #"/home/fms/local/opt/fre-analysis/test/eem/code/cm4_web_analysis/"
-            #+ "etc/LM3_variable_dictionary.pkl",
-            "/Users/krasting/LM3_variable_dictionary.pkl",
+            mapping_file,
             "rb",
         )
     )
