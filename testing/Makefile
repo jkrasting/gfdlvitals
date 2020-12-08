@@ -23,12 +23,16 @@ $(ESM4_OBJECTS): test_data
 $(ESM2_OBJECTS): test_data
 	gfdlvitals -m ESM2 -o db-esm2 test_data/esm2g/history
 
-check: $(ESM4_OBJECTS)
-	mkdir -p results
-	for f in $(DB) ; do \
-	    sqlite3 db-esm4/$$f .dump | grep VALUES | sort --ignore-case > results/$$f.txt ; \
+check: $(ESM4_OBJECTS) $(ESM2_OBJECTS)
+	mkdir -p results/esm4
+	for f in $(ESM4_DB) ; do \
+	    sqlite3 db-esm4/$$f .dump | grep VALUES | sort --ignore-case > results/esm4/$$f.txt ; \
 	done
-	diff results reference
+	mkdir -p results/esm2
+	for f in $(ESM2_DB) ; do \
+	    sqlite3 db-esm2/$$f .dump | grep VALUES | sort --ignore-case > results/esm2/$$f.txt ; \
+	done
+	diff -r results reference
 
 clean:
 	rm -f $(OBJECTS)

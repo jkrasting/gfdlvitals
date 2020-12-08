@@ -1,0 +1,10 @@
+INSERT INTO area VALUES(1,108428129999999.99999);
+INSERT INTO area VALUES(2,108428129999999.99999);
+INSERT INTO dic_stf_gas VALUES(1,-1.4590212691632038934e-09);
+INSERT INTO dic_stf_gas VALUES(2,1.2204731235835780932e-10);
+INSERT INTO long_name VALUES('dic_stf_gas','Gas exchange flux ofdic into Ocean Surface');
+INSERT INTO long_name VALUES('o2_stf_gas','Gas exchange flux ofo2 into Ocean Surface');
+INSERT INTO o2_stf_gas VALUES(1,2.6437179620208755012e-08);
+INSERT INTO o2_stf_gas VALUES(2,2.072064055384041541e-08);
+INSERT INTO units VALUES('dic_stf_gas','mole/m^2/sec');
+INSERT INTO units VALUES('o2_stf_gas','mole/m^2/sec');
