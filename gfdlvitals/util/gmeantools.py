@@ -28,8 +28,9 @@ def get_web_vars_dict():
     """
     return pickle.load(
         open(
-            "/home/fms/local/opt/fre-analysis/test/eem/code/cm4_web_analysis/"
-            + "etc/LM3_variable_dictionary.pkl",
+            #"/home/fms/local/opt/fre-analysis/test/eem/code/cm4_web_analysis/"
+            #+ "etc/LM3_variable_dictionary.pkl",
+            "/Users/krasting/LM3_variable_dictionary.pkl",
             "rb",
         )
     )
