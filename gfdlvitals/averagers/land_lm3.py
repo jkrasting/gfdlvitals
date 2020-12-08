@@ -48,6 +48,13 @@ def driver(fyear, tar, modules):
 
 
 def process_var(variable):
+    """Function called by multiprocessing thread to process a variable
+
+    Parameters
+    ----------
+    variables : RichVariable object
+        Input variable to process
+    """
     fdata = nctools.in_mem_nc(variable.data_file)
     varshape = fdata.variables[variable.varname].shape
     if len(varshape) >= 3:
@@ -127,18 +134,24 @@ class RichVariable:
 
 
 def average(grid_file, data_file, fyear, out, lab):
-    # global fs
-    # global fdata
-    # global fyear
-    # global outdir
-    # global label
+    """Mid-level averaging routine
+
+    Parameters
+    ----------
+    grid_file : bytes-like
+        Gridspec dataset
+    data_file : bytes-like
+        Model output dataset
+    fyear : str
+        Year being processed
+    out : str
+        Output path directory
+    lab : [type]
+        DB file name
+    """
 
     _grid_file = nctools.in_mem_nc(grid_file)
     _data_file = nctools.in_mem_nc(data_file)
-
-    # geometry
-    # global geolon
-    # global geolat
 
     lat = _data_file["lat"][:]
     lon = _data_file["lon"][:]

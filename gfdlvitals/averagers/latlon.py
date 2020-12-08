@@ -1,3 +1,5 @@
+"""Averaging utilities for lat-lon data"""
+
 import multiprocessing
 
 import numpy as np
@@ -36,6 +38,13 @@ def driver(fyear, tar, modules):
 
 
 def process_var(variable):
+    """Function called by multiprocessing thread to process a variable
+
+    Parameters
+    ----------
+    variables : RichVariable object
+        Input variable to process
+    """
     fdata = nctools.in_mem_nc(variable.data_file)
     units = gmeantools.extract_metadata(fdata, variable.varname, "units")
     long_name = gmeantools.extract_metadata(fdata, variable.varname, "long_name")
@@ -98,6 +107,21 @@ class RichVariable:
 
 
 def average(grid_file, data_file, fyear, out, lab):
+    """Mid-level averaging routine
+
+    Parameters
+    ----------
+    grid_file : bytes-like
+        Gridspec dataset
+    data_file : bytes-like
+        Model output dataset
+    fyear : str
+        Year being processed
+    out : str
+        Output path directory
+    lab : [type]
+        DB file name
+    """
 
     _grid_file = nctools.in_mem_nc(grid_file)
     _data_file = nctools.in_mem_nc(data_file)

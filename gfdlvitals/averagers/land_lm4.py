@@ -11,7 +11,7 @@ from gfdlvitals.util.netcdf import tar_member_exists
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as nctools
 
-__all__ = ["drive", "process_var", "average"]
+__all__ = ["driver", "process_var", "average"]
 
 
 def driver(fyear, tar, modules):
