@@ -4,5 +4,7 @@ python/*.pyc
 gfdlvitals.egg-info/
 testing/test_data
 testing/db
+testing/db-esm2
+testing/db-esm4
 testing/results
 .vscode
