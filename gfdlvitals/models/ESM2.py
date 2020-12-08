@@ -2,99 +2,55 @@ import tarfile
 from gfdlvitals import averagers
 from gfdlvitals.util.netcdf import extract_from_tar
 
-__all__ = ['routines']
+from gfdlvitals import averagers
+from gfdlvitals import diags
+from gfdlvitals.util import extract_ocean_scalar
+from gfdlvitals.util.netcdf import extract_from_tar
+from gfdlvitals.util.netcdf import tar_member_exists
 
-def routines(args,infile):
-    #-- Open the tarfile
+import gfdlvitals.util.netcdf as nctools
+
+__all__ = ["routines"]
+
+
+def routines(args, infile):
+    # -- Open the tarfile
     tar = tarfile.open(infile)
     members = tar.getnames()
-    #-- Set the model year string
-    fYear = str(infile.split('/')[-1].split('.')[0])
-    print('Processing '+fYear)
+    # -- Set the model year string
+    fYear = str(infile.split("/")[-1].split(".")[0])
+    print("Processing " + fYear)
 
-    if members[-1][0:2] == "./":
-        modifier = "./"
-    else:
-        modifier = ""
+    # -- Land
+    modules = {"land_month": "Land"}
+    averagers.land_lm3.driver(fYear, tar, modules)
 
-    #-- Land
-    label = 'Land'
-    modules = 'land_month'
-    if modifier+fYear+'.land_static.nc' in members:
-      fgs = extract_from_tar(tar,modifier+fYear+'.land_static.nc')
-    else:
-      fgs = extract_from_tar(tar,modifier+fYear+'.land_month.nc')
-    modules = ['land_month']
-    for module in modules:
-        fname = modifier+fYear+'.'+module+'.nc'
-        if fname in members:
-            fdata = extract_from_tar(tar,fname)
-            print(fname)
-            averagers.land_lm3.average(fgs,fdata,fYear,'./',label)
-            fdata.close()
-    fgs.close()
+    # -- Atmos
+    modules = {
+        "atmos_month": "Atmos",
+        "atmos_level": "Atmos",
+    }
+    averagers.latlon.driver(fYear, tar, modules)
 
-    #-- Atmosphere
-    label = 'Atmos'
-    modules = ['atmos_month','atmos_level']
-    for module in modules:
-        # Need to figure out how to handle leading slash
-        #fname = './'+fYear+'.'+module+'.nc'
-        fname = modifier+fYear+'.'+module+'.nc'
-        if fname in members:
-            ds = extract_from_tar(tar,fname)
-            print(fname)
-            averagers.latlon.average(ds,ds,fYear,'./',label)
-            ds.close()
+    # -- Ice
+    modules = {"ice_month": "Ice"}
+    averagers.ice.driver(fYear, tar, modules)
 
-    #-- Ocean
-    label = 'Ocean'
-    modules = ['ocean_month']
-    if modifier+fYear+'.ocean_static.nc' in members:
-        fgs = extract_from_tar(tar,modifier+fYear+'.ocean_static.nc')
-    else:
-        fgs = extract_from_tar(tar,modifier+fYear+'.ocean_month.nc')
-    for module in modules:
-        fname = modifier+fYear+'.'+module+'.nc'
-        if fname in members:
-            fdata = extract_from_tar(tar,fname)
-            print(fname)
-            averagers.tripolar.average(fgs,fdata,fYear,'./',label)
-            fdata.close()
-    fgs.close()
+    # -- Ocean
+    modules = {
+        "ocean_month": "Ocean",
+    }
+    averagers.tripolar.driver(fYear, tar, modules)
 
-    #-- TOPAZ
-    label = 'TOPAZ'
-    modules = ['ocean_topaz_fluxes','ocean_topaz_misc','ocean_topaz_sfc_100',\
-               'ocean_topaz_tracers_month_z','ocean_topaz_wc_btm']
-    if modifier+fYear+'.ocean_static.nc' in members:
-        fgs = extract_from_tar(tar,modifier+fYear+'.ocean_static.nc')
-    else:
-        fgs = extract_from_tar(tar,modifier+fYear+'.ocean_month.nc')
-    for module in modules:
-        fname = modifier+fYear+'.'+module+'.nc'
-        if fname in members:
-            fdata = extract_from_tar(tar,fname)
-            print(fname)
-            averagers.tripolar.average(fgs,fdata,fYear,'./',label)
-            fdata.close()
-    fgs.close()
+    # -- OBGC
+    modules = {
+        "ocean_topaz_fluxes": "OBGC",
+        "ocean_topaz_misc": "OBGC",
+        "ocean_topaz_sfc_100": "OBGC",
+        "ocean_topaz_tracers_month_z": "OBGC",
+        "ocean_topaz_wc_btm": "OBGC",
+    }
+    averagers.tripolar.driver(fYear, tar, modules)
 
-    #-- Ice
-    label = 'Ice'
-    modules = ['ice_month']
-    if modifier+fYear+'.ice_static.nc' in members:
-        fgs = extract_from_tar(tar,modifier+fYear+'.ice_static.nc')
-    else:
-        fgs = extract_from_tar(tar,modifier+fYear+'.ice_month.nc')
-    for module in modules:
-        fname = modifier+fYear+'.'+module+'.nc'
-        if fname in members:
-            fdata = extract_from_tar(tar,fname)
-            print(fname)
-            averagers.ice.average(fgs,fdata,fYear,'./',label)
-            fdata.close()
-    fgs.close()
-
-    #-- Close out the tarfile handle
+    # -- Close out the tarfile handle
     tar.close()
