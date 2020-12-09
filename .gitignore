@@ -7,4 +7,5 @@ testing/db
 testing/db-esm2
 testing/db-esm4
 testing/results
+docs/build
 .vscode
