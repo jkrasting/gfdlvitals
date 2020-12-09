@@ -4,7 +4,41 @@ __all__ = ["RichVariable"]
 
 
 class RichVariable:
-    """Metadata-rich variable class"""
+    """Metadata-rich variable class
+
+    Parameters
+    ----------
+    varname : str
+        Variable name
+    grid_file : io.BufferedReader or list of io.BufferedReader
+        Grid-spec tiles
+    data_file : io.BufferedReader or list of io.BufferedReader
+        Data tiles
+    fyear : str
+        Year that is being processed
+    outdir : str
+        Output path directory
+    label : str
+        DB file name
+    geolat : np.ma.masked_array
+        Array of latitudes
+    geolon : np.ma.masked_array
+        Array of longitudes
+    cell_area : np.ma.masked_array
+        Array of cell areas
+    area_types : dict, optional
+        [description], by default None
+    cell_depth : np.ma.masked_array, optional
+        [description], by default None
+    cell_frac : np.ma.masked_array, optional
+        [description], by default None
+    soil_area : np.ma.masked_array, optional
+        [description], by default None
+    soil_frac : np.ma.masked_array, optional
+        [description], by default None
+    average_dt : np.ma.masked_array
+        Array of time averaging period
+    """
 
     def __init__(
         self,
@@ -24,45 +58,6 @@ class RichVariable:
         soil_frac=None,
         average_dt=None,
     ):
-        """[summary]
-
-        Parameters
-        ----------
-        varname : [type]
-            [description]
-        grid_file : [type]
-            [description]
-        data_file : [type]
-            [description]
-        fyear : [type]
-            [description]
-        outdir : [type]
-            [description]
-        label : [type]
-            [description]
-        geolat : [type]
-            [description]
-        geolon : [type]
-            [description]
-        cell_area : [type]
-            [description]
-        area_types : [type], optional
-            [description], by default None
-        cell_depth : [type], optional
-            [description], by default None
-        cell_frac : [type], optional
-            [description], by default None
-        soil_area : [type], optional
-            [description], by default None
-        soil_frac : [type], optional
-            [description], by default None
-        area_types : dict
-            Dictionary of different land area types
-        cell_depth : np.ma.masked_array
-            Array of cell depths
-        average_dt : np.ma.masked_array
-            Array of time averaging period
-        """
         self.varname = varname
         self.grid_file = grid_file
         self.data_file = data_file
@@ -72,8 +67,8 @@ class RichVariable:
         self.geolat = geolat
         self.geolon = geolon
         self.cell_area = cell_area
-        self.cell_area = cell_area
-        self.cell_area = cell_area
+        self.area_types = area_types
+        self.cell_depth = cell_depth
         self.cell_frac = cell_frac
         self.soil_area = soil_area
         self.soil_frac = soil_frac
