@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="gfdlvitals",
-    version="3.0.0",
+    version="3.0a1",
     author="John Krasting",
     author_email="John.Krasting@noaa.gov",
     description="A package for computing global means from GFDL models",

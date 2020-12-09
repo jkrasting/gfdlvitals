@@ -5,4 +5,4 @@ from . import models
 from . import util
 
 __all__ = ['averagers','models','util']
-__version__ = "2.0.0"
+__version__ = "3.0a1"
