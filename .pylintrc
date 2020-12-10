@@ -420,9 +420,14 @@ function-naming-style=snake_case
 good-names=i,
            j,
            k,
+           x,
+           y,
+           t,
            ex,
            Run,
-           _
+           _,
+           ax,
+           df
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
