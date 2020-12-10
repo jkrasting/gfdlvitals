@@ -2,8 +2,9 @@
 
 from . import averagers
 from . import models
+from . import sample
 from . import util
 from .extensions import *
 
-__all__ = ["averagers", "models", "util", "VitalsDataFrame", "read_db"]
+__all__ = ["averagers", "models", "util", "VitalsDataFrame", "open_db"]
 __version__ = "3.0a1"

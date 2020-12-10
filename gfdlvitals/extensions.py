@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-__all__ = ["VitalsDataFrame", "Timeseries", "read_db"]
+__all__ = ["VitalsDataFrame", "Timeseries", "open_db"]
 
 
 def _remove_trend(x, y, order=1, anomaly=True, return_coefs=False, coefs=None):
@@ -177,7 +177,7 @@ class Timeseries:
     def __hash__(self):
         return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
 
-def read_db(
+def open_db(
     dbfile,
     variables=None,
     yearshift=0.0,
