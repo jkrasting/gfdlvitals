@@ -2,97 +2,14 @@
 
 import multiprocessing
 
-import numpy as np
+from functools import partial
 
-from gfdlvitals.util.netcdf import extract_from_tar
-from gfdlvitals.util.netcdf import tar_member_exists
 from gfdlvitals.util.average import RichVariable
+from gfdlvitals.util.average import process_var
 
-import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as nctools
 
-__all__ = ["driver", "process_var", "average"]
-
-
-def driver(fyear, tar, modules):
-    """Run the averager on tripolar ocean history data
-
-    Parameters
-    ----------
-    fyear : str
-        Year to process (YYYYMMDD)
-    tar : tarfile object
-        In-memory pointer to history tarfile
-    modules : dict
-        Dictionary of history nc streams (keys) and output db name (values)
-    """
-    members = [f"{fyear}.{x}.nc" for x in list(modules.keys())]
-    members = [tar_member_exists(tar, x) for x in members]
-
-    if any(members):
-        staticname = f"{fyear}.ocean_static.nc"
-        grid_file = (
-            extract_from_tar(tar, staticname)
-            if tar_member_exists(tar, staticname)
-            else extract_from_tar(tar, f"{fyear}.ocean_month.nc")
-        )
-
-        for module in list(modules.keys()):
-            fname = f"{fyear}.{module}.nc"
-            if tar_member_exists(tar, fname):
-                print(f"{fyear} - {module}")
-                fdata = extract_from_tar(tar, fname)
-                average(grid_file, fdata, fyear, "./", modules[module])
-                del fdata
-
-        del grid_file
-
-
-def process_var(variable):
-    """Function called by multiprocessing thread to process a variable
-
-    Parameters
-    ----------
-    variables : RichVariable object
-        Input variable to process
-    """
-    fdata = nctools.in_mem_nc(variable.data_file)
-    units = gmeantools.extract_metadata(fdata, variable.varname, "units")
-    long_name = gmeantools.extract_metadata(fdata, variable.varname, "long_name")
-    ndims = len(fdata.variables[variable.varname].shape)
-    if ndims >= 3:
-        if ndims == 3:
-            dims = fdata.variables[variable.varname].dimensions
-            if dims[-2] == "yh" and dims[-1] == "xh":
-                var = fdata.variables[variable.varname][:]
-            else:
-                return
-        elif (ndims == 4) and (variable.varname[0:9] == "tot_layer"):
-            var = fdata.variables[variable.varname][:]
-            var = np.ma.sum(var, axis=1)
-        else:
-            return
-        var = np.ma.average(var, axis=0, weights=fdata.variables["average_DT"][:])
-        for reg in ["global", "tropics", "nh", "sh"]:
-            result, area_sum = gmeantools.area_mean(
-                var, variable.cell_area, variable.geolat, variable.geolon, region=reg
-            )
-            sqlfile = (
-                variable.outdir
-                + "/"
-                + variable.fyear
-                + "."
-                + reg
-                + "Ave"
-                + variable.label
-                + ".db"
-            )
-            gmeantools.write_metadata(sqlfile, variable.varname, "units", units)
-            gmeantools.write_metadata(sqlfile, variable.varname, "long_name", long_name)
-            gmeantools.write_sqlite_data(
-                sqlfile, variable.varname, variable.fyear[:4], result
-            )
-            gmeantools.write_sqlite_data(sqlfile, "area", variable.fyear[:4], area_sum)
+__all__ = ["average"]
 
 
 def average(grid_file, data_file, fyear, out, lab):
@@ -163,4 +80,4 @@ def average(grid_file, data_file, fyear, out, lab):
     _data_file.close()
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    pool.map(process_var, variables)
+    pool.map(partial(process_var, **{"averager": "tripolar"}), variables)

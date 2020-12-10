@@ -8,6 +8,8 @@ from gfdlvitals.util import extract_ocean_scalar
 from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.netcdf import tar_member_exists
 
+from gfdlvitals.util.average import generic_driver
+
 import gfdlvitals.util.netcdf as nctools
 
 __all__ = ["routines"]
@@ -23,24 +25,42 @@ def routines(args, infile):
 
     # -- Land
     modules = {"land_month": "Land"}
-    averagers.land_lm3.driver(fYear, tar, modules)
+    generic_driver(
+        fYear,
+        tar,
+        modules,
+        averagers.land_lm3.average,
+        static_file=("land_static", "land_month"),
+    )
 
     # -- Atmos
     modules = {
         "atmos_month": "Atmos",
         "atmos_level": "Atmos",
     }
-    averagers.latlon.driver(fYear, tar, modules)
+    generic_driver(fYear, tar, modules, averagers.latlon.average, static_file=None)
 
     # -- Ice
     modules = {"ice_month": "Ice"}
-    averagers.ice.driver(fYear, tar, modules)
+    generic_driver(
+        fYear,
+        tar,
+        modules,
+        averagers.ice.average,
+        static_file=("ice_static", "ice_month"),
+    )
 
     # -- Ocean
     modules = {
         "ocean_month": "Ocean",
     }
-    averagers.tripolar.driver(fYear, tar, modules)
+    generic_driver(
+        fYear,
+        tar,
+        modules,
+        averagers.tripolar.average,
+        static_file=("ocean_static", "ocean_month"),
+    )
 
     # -- OBGC
     modules = {
@@ -50,7 +70,13 @@ def routines(args, infile):
         "ocean_topaz_tracers_month_z": "OBGC",
         "ocean_topaz_wc_btm": "OBGC",
     }
-    averagers.tripolar.driver(fYear, tar, modules)
+    generic_driver(
+        fYear,
+        tar,
+        modules,
+        averagers.tripolar.average,
+        static_file=("ocean_static", "ocean_month"),
+    )
 
     # -- Close out the tarfile handle
     tar.close()

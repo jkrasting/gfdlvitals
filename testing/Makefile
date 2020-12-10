@@ -11,6 +11,8 @@ ESM2_OBJECTS=$(patsubst %, db-esm2/%, $(ESM2_DB))
 
 all: $(ESM4_OBJECTS) $(ESM2_OBJECTS)
 
+esm2: $(ESM2_OBJECTS)
+
 test_data:
 	curl -o gfdlvitals_test_data.tar.gz ftp://ftp.gfdl.noaa.gov/pub/John.Krasting/gfdlvitals/gfdlvitals_test_data.tar.gz
 	tar -xzvf gfdlvitals_test_data.tar.gz

@@ -7,6 +7,9 @@ from gfdlvitals.util import extract_ocean_scalar
 from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.netcdf import tar_member_exists
 
+from gfdlvitals.util.average import generic_cubesphere_driver
+from gfdlvitals.util.average import generic_driver
+
 import gfdlvitals.util.netcdf as nctools
 
 __all__ = ["routines"]
@@ -29,15 +32,23 @@ def routines(args, infile):
         "atmos_month_aer": "AtmosAer",
         "aerosol_month_cmip": "AeroCMIP",
     }
-    averagers.cubesphere.driver(fYear, tar, modules)
+    generic_cubesphere_driver(fYear, tar, modules, averagers.cubesphere.average)
 
     # -- Land Fields
     modules = {"land_month": "Land"}
-    averagers.land_lm4.driver(fYear, tar, modules)
+    generic_cubesphere_driver(
+        fYear, tar, modules, averagers.land_lm4.average, grid_spec="land_static"
+    )
 
     # -- Ice
     modules = {"ice_month": "Ice"}
-    averagers.ice.driver(fYear, tar, modules)
+    generic_driver(
+        fYear,
+        tar,
+        modules,
+        averagers.ice.average,
+        static_file=("ice_static", "ice_month"),
+    )
 
     # -- Ocean
     fname = f"{fYear}.ocean_scalar_annual.nc"
@@ -60,7 +71,13 @@ def routines(args, infile):
         "ocean_bling_cmip6_omip_tracers_month_z": "OBGC",
         "ocean_bling_cmip6_omip_tracers_year_z": "OBGC",
     }
-    averagers.tripolar.driver(fYear, tar, modules)
+    generic_driver(
+        fYear,
+        tar,
+        modules,
+        averagers.tripolar.average,
+        static_file=("ocean_static", "ocean_month"),
+    )
 
     # -- AMOC
     if args.gridspec is not None:

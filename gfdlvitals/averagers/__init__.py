@@ -1,3 +1,5 @@
+""" Averaging kernel utilities """
+
 from . import cubesphere
 from . import ice
 from . import latlon

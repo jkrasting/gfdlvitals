@@ -2,99 +2,17 @@
 
 import multiprocessing
 
+from functools import partial
+
 import numpy as np
 
-from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.average import RichVariable
-from gfdlvitals.util.netcdf import tar_member_exists
+from gfdlvitals.util.average import process_var
 
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as nctools
 
-__all__ = ["driver", "process_var", "average"]
-
-
-def driver(fyear, tar, modules):
-    """Run the averager on ice history data
-
-    Parameters
-    ----------
-    fyear : str
-        Year to process (YYYYMMDD)
-    tar : tarfile object
-        In-memory pointer to history tarfile
-    modules : dict
-        Dictionary of history nc streams (keys) and output db name (values)
-    """
-    members = [f"{fyear}.{x}.nc" for x in list(modules.keys())]
-    members = [tar_member_exists(tar, x) for x in members]
-
-    if any(members):
-        staticname = f"{fyear}.ice_static.nc"
-        fgs = (
-            extract_from_tar(tar, staticname)
-            if tar_member_exists(tar, staticname)
-            else extract_from_tar(tar, f"{fyear}.ice_month.nc")
-        )
-
-        for module in list(modules.keys()):
-            fname = f"{fyear}.{module}.nc"
-            if tar_member_exists(tar, fname):
-                print(f"{fyear} - {module}")
-                fdata = extract_from_tar(tar, fname)
-                average(fgs, fdata, fyear, "./", modules[module])
-                del fdata
-
-        del fgs
-
-
-def process_var(variable):
-    """Function called by multiprocessing thread to process a variable
-
-    Parameters
-    ----------
-    variables : RichVariable object
-        Input variable to process
-    """
-    fdata = nctools.in_mem_nc(variable.data_file)
-    if fdata.variables[variable.varname].shape == variable.cell_area.shape:
-        units = gmeantools.extract_metadata(fdata, variable.varname, "units")
-        long_name = gmeantools.extract_metadata(fdata, variable.varname, "long_name")
-        data = fdata.variables[variable.varname][:]
-        for reg in ["global", "nh", "sh"]:
-            sqlite_out = (
-                variable.outdir
-                + "/"
-                + variable.fyear
-                + "."
-                + reg
-                + "Ave"
-                + variable.label
-                + ".db"
-            )
-            _v, _area = gmeantools.mask_latitude_bands(
-                data, variable.cell_area, variable.geolat, region=reg
-            )
-            _v = np.ma.sum((_v * _area), axis=(-1, -2)) / np.ma.sum(
-                _area, axis=(-1, -2)
-            )
-            gmeantools.write_metadata(sqlite_out, variable.varname, "units", units)
-            gmeantools.write_metadata(
-                sqlite_out, variable.varname, "long_name", long_name
-            )
-            gmeantools.write_sqlite_data(
-                sqlite_out,
-                variable.varname + "_mean",
-                variable.fyear[:4],
-                np.ma.average(_v, axis=0, weights=variable.average_dt),
-            )
-            gmeantools.write_sqlite_data(
-                sqlite_out, variable.varname + "_max", variable.fyear[:4], np.ma.max(_v)
-            )
-            gmeantools.write_sqlite_data(
-                sqlite_out, variable.varname + "_min", variable.fyear[:4], np.ma.min(_v)
-            )
-    fdata.close()
+__all__ = ["average"]
 
 
 def average(grid_file, data_file, fyear, out, lab):
@@ -200,4 +118,4 @@ def average(grid_file, data_file, fyear, out, lab):
     _data_file.close()
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    pool.map(process_var, variables)
+    pool.map(partial(process_var, **{"averager": "ice"}), variables)
