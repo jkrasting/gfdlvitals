@@ -35,6 +35,7 @@ Documentation
 
    generate_diags
    sqlite_format
+   vitals_data_frame
    db2nc
 
 **Help & reference**
