@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-__all__ = ["VitalsDataFrame", "Timeseries", "open_db"]
+__all__ = ["VitalsDataFrame", "Timeseries", "open_db", "reformat_time_axis"]
 
 
 def _remove_trend(x, y, order=1, anomaly=True, return_coefs=False, coefs=None):
@@ -48,6 +48,7 @@ def _remove_reference_trend(t, x, other, anomaly=True):
         result = _remove_trend(t, x, anomaly=anomaly, coefs=_coefs)
     return result
 
+
 def reformat_time_axis(ax=None):
     """Reformats x-axis labels to YYYY format"""
     if ax is None:
@@ -70,10 +71,25 @@ class VitalsDataFrame(pd.DataFrame):
         return VitalsDataFrame
 
     def smooth(self, window, extrap=False):
-        _df = self.rolling(window, center=True).mean()
-        if extrap is True:
-            _df.fillna(method="ffill", inplace=True)
-            _df.fillna(method="bfill", inplace=True)
+        if window is None:
+            _df = self
+        else:
+            _df = self.rolling(window, center=True).mean()
+            if extrap is True:
+                _df.fillna(method="ffill", inplace=True)
+                _df.fillna(method="bfill", inplace=True)
+        _df.attrs = self.attrs
+        return _df
+
+    def extend(self, maxlen):
+        endyear = tuple(self.index[-1].timetuple())
+        padding = np.arange(1, maxlen - len(self.index) + 1) + endyear[0]
+        added_index = [cftime.DatetimeNoLeap(x, *endyear[1:]) for x in padding]
+        _df = pd.DataFrame({"times": added_index}).set_index("times")
+        _df = self.append(_df)
+        _df.attrs = self.attrs
+        for column in self.columns:
+            _df[column].attrs = self[column].attrs
         return _df
 
     def detrend(self, reference=None, order=1, anomaly=True, return_coefs=False):
@@ -86,8 +102,8 @@ class VitalsDataFrame(pd.DataFrame):
         if reference is not None:
             if order != 1:
                 print(
-                    "Only a linear trend can be removed based on "+
-                    "another dataset. Setting order to 1."
+                    "Only a linear trend can be removed based on "
+                    + "another dataset. Setting order to 1."
                 )
                 order = 1
             coefs = reference.detrend(order=order, return_coefs=True)
@@ -106,6 +122,7 @@ class VitalsDataFrame(pd.DataFrame):
                     )
                 )
             )
+        result.attrs = self.attrs
         return result
 
     def trend(self, order=1):
@@ -115,7 +132,9 @@ class VitalsDataFrame(pd.DataFrame):
                 for x in self.index
             ]
         )
-        return self.apply(lambda x: (_calc_trend(tindex, x, order=order)))
+        result = self.apply(lambda x: (_calc_trend(tindex, x, order=order)))
+        result.attrs = self.attrs
+        return result
 
 
 class Timeseries:
@@ -138,9 +157,9 @@ class Timeseries:
         results = cur.fetchall()
         self.t, self.data = zip(*results)
         self.t = np.array(self.t)
+        _ = cur.execute("SELECT name FROM sqlite_master where TYPE='table'")
+        tables = [str(record[0]) for record in cur.fetchall()]
         if multiply_by_area is True:
-            _ = cur.execute("SELECT name FROM sqlite_master where TYPE='table'")
-            tables = [str(record[0]) for record in cur.fetchall()]
             if "cell_measure" in tables:
                 _ = cur.execute(
                     "SELECT value FROM cell_measure where var='" + var + "'"
@@ -152,6 +171,16 @@ class Timeseries:
             area = np.array(cur.fetchall()).squeeze()
             scale = area * scale
         self.data = np.array(self.data) * scale
+        if "long_name" in tables:
+            _ = cur.execute(f"SELECT value FROM long_name where var='{var}'")
+            self.long_name = cur.fetchone()[0]
+        else:
+            self.long_name = None
+        if "units" in tables:
+            _ = cur.execute(f"SELECT value FROM units where var='{var}'")
+            self.units = cur.fetchone()[0]
+        else:
+            self.units = None
         cur.close()
         con.close()
         if start is not None:
@@ -177,6 +206,7 @@ class Timeseries:
     def __hash__(self):
         return hash([self.__dict__[x] for x in list(self.__dict__.keys())])
 
+
 def open_db(
     dbfile,
     variables=None,
@@ -200,14 +230,18 @@ def open_db(
 
     # -- Loop over variables
     data = {}
+    attributes = {}
     years = []
     skipped = []
     for var in variables:
         try:
-            tsobj = Timeseries(dbfile, var, legacy_land=legacy_land, start=start, end=end)
+            tsobj = Timeseries(
+                dbfile, var, legacy_land=legacy_land, start=start, end=end
+            )
             if len(tsobj.t) > 0:
                 data[var] = tsobj.data
                 years = years + list(tsobj.t)
+                attributes[var] = {"long_name": tsobj.long_name, "units": tsobj.units}
         except:
             skipped.append(var)
 
@@ -229,5 +263,10 @@ def open_db(
         "days since 0001-01-01",
         calendar="365_day",
     )
+
     df = VitalsDataFrame(df)
+
+    for var in list(df.columns):
+        df[var].attrs = attributes[var]
+
     return df
