@@ -1,20 +1,14 @@
 #!/usr/bin/env python
 
-import argparse
+""" CLI script for plotting SQLite files """
 
-import cftime
-import nc_time_axis
+import argparse
+import os
 
 import gfdlvitals
-import matplotlib
 import matplotlib.pyplot as plt
 
-import os
-from matplotlib import font_manager as fm, rcParams
-import matplotlib.pyplot as plt
-from matplotlib import font_manager
-
-count = 1
+COUNT = 1
 
 
 def arguments():
@@ -66,6 +60,14 @@ def arguments():
     )
 
     parser.add_argument(
+        "-l",
+        "--labels",
+        type=str,
+        default=None,
+        help="Comma-separated list of dataset labels",
+    )
+
+    parser.add_argument(
         "-n",
         "--nyears",
         type=int,
@@ -77,210 +79,71 @@ def arguments():
     return args
 
 
-def plot_timeseries(dsets, trend, align_times, smooth, nyears, var, labels=None):
+def on_key(event, fig, varlist, axes_dict, smooth, nyears, trend):
+    """Update plot on keypress of left and right arrow keys
 
-    # Ensure "dsets" is a list
-    dsets = [dsets] if not isinstance(dsets, list) else dsets
-
-    # Text Labels
-    if labels is None:
-        labels = [f"Data{x}" for x in range(0, len(dsets))]
-
-    # Determine max length of time values
-    maxlen = max([len(x.index) for x in dsets])
-
-    # Compute trends if asked
-    if trend:
-        trends = [x.trend()[0:nyears] for x in dsets]
-
-    if align_times:
-        dsets = [x.extend(maxlen) for x in dsets]
-
-    # Setup the figure. The top half will have a 16:9 aspect
-    # ratio. The bottom half will be used for legend info and
-    # the whole figure will be cropped at the end
-
-    fig = plt.figure(figsize=(12, 6.75))
-    ax1 = plt.subplot(1, 1, 1)
-
-    # Establish a list of axes in the figure
-    axes_dict = {}
-
-    # If smoothing is requested, still plot a faint copy of the full timeseries
-    for x, dset in enumerate(dsets):
-        dset.attrs["alpha"] = 0.3 if smooth is not None else 1.0
-        dset.attrs["color"] = f"C{x}"
-
-    for n, dset in enumerate(dsets):
-        label = labels[n]
-
-        axes_dict[label] = {}
-        axes_dict[label]["data"] = dset
-
-        # Determine if we need a twin time axis
-        _ax = ax1.twiny() if align_times and n > 0 else ax1
-        axes_dict[label]["axis"] = _ax
-
-        axes_list = [axes_dict[x]["axis"] for x in list(axes_dict.keys())]
-
-        # Keep a list of the axes and move new ones to the bottom of the figure
-        if _ax not in list(axes_dict.keys()) and align_times:
-            # Move twinned axis ticks and label from top to bottom
-            _ax.xaxis.set_ticks_position("bottom")
-            _ax.xaxis.set_label_position("bottom")
-
-            # Offset the twin axis below the host
-            _ax.spines["bottom"].set_position(("axes", -0.10 * (len(axes_dict) - 1)))
-
-            # Make sure frame is displayed
-            if n > 0:
-                _ax.set_frame_on(True)
-                # Turn on the frame for the twin axis, but then hide all
-                # but the bottom spine
-                _ax.patch.set_visible(False)
-                _ = [sp.set_visible(False) for sp in _ax.spines.values()]
-                _ax.spines["bottom"].set_visible(True)
-
-        # Convert times to nc_time_axis
-        times = [
-            nc_time_axis.CalendarDateTime(item, "noleap") for item in dset.index.values
-        ]
-
-        # Make the first plot
-        (axes_dict[label]["line"],) = _ax.plot(
-            times[0:nyears],
-            dset[var].values[0:nyears],
-            color=dset.attrs["color"],
-            alpha=dset.attrs["alpha"],
-        )
-
-        # After the first plot is established, align time axes if asked
-        if align_times:
-            _time_index = dset.index[0:nyears]
-            _ax.set_xlim(
-                cftime.date2num(
-                    _time_index[0], calendar="noleap", units="days since 2000-01-01"
-                ),
-                cftime.date2num(
-                    _time_index[-1], calendar="noleap", units="days since 2000-01-01"
-                ),
-            )
-
-        if trend:
-            (axes_dict[label]["trendline"],) = _ax.plot(
-                times[0 : len(trends[n])],
-                trends[n][var].values[0:nyears],
-                linestyle="dashed",
-                color=dset.attrs["color"],
-                alpha=1.0,
-                linewidth=1,
-            )
-            axes_dict[label]["trend"] = trends[n]
-
-        if smooth:
-            (axes_dict[label]["smoothline"],) = _ax.plot(
-                times[0:nyears],
-                dset.smooth(smooth)[var].values[0:nyears],
-                color=dset.attrs["color"],
-                alpha=1.0,
-                linewidth=2,
-            )
-
-        # Text annotations
-
-        if n == 0:
-            axes_dict[label]["topline_label"] = _ax.text(
-                0.01, 1.08, var, ha="left", transform=ax1.transAxes, fontsize=22
-            )
-
-            axes_dict[label]["longname_label"] = _ax.text(
-                0.01,
-                1.03,
-                dset[var].attrs["long_name"],
-                ha="left",
-                transform=ax1.transAxes,
-                style="italic",
-                fontsize=14,
-                fontfamily="Roboto Condensed",
-            )
-
-            axes_dict[label]["units_label"] = _ax.set_ylabel(dset[var].attrs["units"])
-
-    axes_list = list(set([axes_dict[x]["axis"] for x in list(axes_dict.keys())]))
-    maxlim = max([x.get_xlim()[1] - x.get_xlim()[0] for x in axes_list])
-    _ = [x.set_xlim(x.get_xlim()[0], x.get_xlim()[0] + maxlim) for x in axes_list]
-
-    # Add grid
-    _ = [x.grid(color="gray", linestyle="--", linewidth=0.3) for x in axes_list]
-
-    plt.tight_layout()
-
-    return fig, axes_dict
-
-
-def on_key(event, varlist, axes_dict, smooth, nyears, trend):
-    global count
-    global var
+    Parameters
+    ----------
+    event : mpl keyboard event
+        Key press
+    fig : matplotlib.pyplot.figure
+        Matplotlib figure handle
+    varlist : list
+        List of variables to plot
+    axes_dict : dict
+        Internal structure of axes associations to the data
+    smooth : int, None type
+        Integer number of years to apply as a smoother
+    nyears : int, None type
+        Integer number to years to limit the plotting
+    trend : bool
+        Add linear trend lines if True, omit if False
+    """
+    global COUNT
 
     redraw = False
 
     if (event.key == "right") or (event.key == "left"):
-        count = (count + 1) if event.key == "right" else (count - 1)
-        count = 0 if count < 0 else count
-        count = len(varlist) - 1 if count >= len(varlist) else count
-        var = varlist[count]
-        redraw = True
-
-    if event.key == "t":
-        trend = not trend
+        COUNT = (COUNT + 1) if event.key == "right" else (COUNT - 1)
+        COUNT = 0 if COUNT < 0 else COUNT
+        COUNT = len(varlist) - 1 if COUNT >= len(varlist) else COUNT
+        varname = varlist[COUNT]
         redraw = True
 
     if redraw is True:
-        for n, label in enumerate(list(axes_dict.keys())):
-            axes_dict[label]["line"].set_ydata(
-                axes_dict[label]["data"][var].values[0:nyears]
-            )
-
-            if trend:
-                axes_dict[label]["trendline"].set_ydata(
-                    axes_dict[label]["trend"][var].values[0:nyears]
-                )
-
-            if smooth:
-                axes_dict[label]["smoothline"].set_ydata(
-                    axes_dict[label]["data"].smooth(smooth)[var].values[0:nyears]
-                )
-
-            if n == 0:
-                axes_dict[label]["topline_label"].set_text(var)
-                axes_dict[label]["longname_label"].set_text(
-                    axes_dict[label]["data"][var].attrs["long_name"]
-                )
-                axes_dict[label]["units_label"].set_text(
-                    axes_dict[label]["data"][var].attrs["units"]
-                )
-
-        axes_list = [axes_dict[x]["axis"] for x in list(axes_dict.keys())]
-        _ = [ax.relim() for ax in axes_list]
-        _ = [ax.autoscale(enable=True, axis="y") for ax in axes_list]
-        plt.tight_layout()
-        fig.canvas.draw()
+        _ = gfdlvitals.plot.update_figure(
+            fig, axes_dict, varname, smooth, nyears, trend
+        )
 
 
 if __name__ == "__main__":
-    args = arguments()
-    dsets = [gfdlvitals.open_db(x) for x in args.dbfiles]
+    cliargs = arguments()
+    dsets = [gfdlvitals.open_db(x) for x in cliargs.dbfiles]
 
-    varlist = sorted(list(dsets[0].columns))
+    variable_list = sorted(list(dsets[0].columns))
 
-    fig, axes_dict = plot_timeseries(
-        dsets, args.trend, args.align, args.smooth, args.nyears, varlist[0]
+    mplfig, axes = gfdlvitals.plot.plot_timeseries(
+        dsets,
+        variable_list[0],
+        trend=cliargs.trend,
+        align_times=cliargs.align,
+        smooth=cliargs.smooth,
+        nyears=cliargs.nyears,
+        labels=cliargs.labels,
     )
-    cid = fig.canvas.mpl_connect(
+    cid = mplfig.canvas.mpl_connect(
         "key_press_event",
         lambda event: on_key(
-            event, varlist, axes_dict, args.smooth, args.nyears, args.trend
+            event,
+            mplfig,
+            variable_list,
+            axes,
+            cliargs.smooth,
+            cliargs.nyears,
+            cliargs.trend,
         ),
     )
+
+    plt.tight_layout()
 
     plt.show(block=True)

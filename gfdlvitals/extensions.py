@@ -13,7 +13,29 @@ __all__ = ["VitalsDataFrame", "Timeseries", "open_db", "reformat_time_axis"]
 
 
 def _remove_trend(x, y, order=1, anomaly=True, return_coefs=False, coefs=None):
-    """Internal function to remove a linear trend"""
+    """Internal function to remove a linear trend
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        independent axis
+    y : np.ndarray
+        dependent axis
+    order : int, optional
+        Polynomial order to use for fitting, by default 1
+    anomaly : bool, optional
+        Results as anomalies from the fit, by default True
+    return_coefs : bool, optional
+        Return polynomial fit coeffiecients, by default False
+    coefs : tuple, optional
+        Use a provided set of coefficients, by default None
+
+    Returns
+    -------
+    numpy.ndarray
+        Detrended data
+    """
+
     if None in list(y):
         return None
     if coefs is None:
@@ -32,7 +54,23 @@ def _remove_trend(x, y, order=1, anomaly=True, return_coefs=False, coefs=None):
 
 
 def _calc_trend(x, y, order=1):
-    """Internal function to calculate trend line/curve"""
+    """Internal function to calculate trend line/curves
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        independent axis
+    y : np.ndarray
+        dependent axis
+    order : int, optional
+        Polynomial order to use for fitting, by default 1
+
+    Returns
+    -------
+    numpy.ndarray
+        Polynomial fit
+    """
+
     idx = np.isfinite(x) & np.isfinite(y)
     coefs = np.polyfit(x[idx], y[idx], order)
     model = np.poly1d(coefs)
@@ -40,7 +78,25 @@ def _calc_trend(x, y, order=1):
 
 
 def _remove_reference_trend(t, x, other, anomaly=True):
-    """Removes trends from a reference dataset"""
+    """Removes trends from a reference dataset
+
+    Parameters
+    ----------
+    t : numpy.ndarray
+        independent axis
+    x : gfdlvitals.VitalsDataFrame
+        Dataset to be detrended
+    other : gfdlvitals.VitalsDataFrame
+        Reference dataset containing the trend to be removed
+    anomaly : bool, optional
+        Results as anomalies from the fit, by default True
+
+    Returns
+    -------
+    gfdlvitals.VitalsDataFrame
+        Detrended dataset
+    """
+
     if str(x.name) not in list(other.columns):
         result = None
     else:
@@ -50,7 +106,14 @@ def _remove_reference_trend(t, x, other, anomaly=True):
 
 
 def reformat_time_axis(ax=None):
-    """Reformats x-axis labels to YYYY format"""
+    """Reformats x-axis labels to YYYY format
+
+    Parameters
+    ----------
+    ax : matplotlob.pyplot.figure.axis, optional
+        axis object to be reformatted, by default None
+    """
+
     if ax is None:
         ax = plt.gca()
     labels = [x.get_text() for x in ax.xaxis.get_ticklabels()]
@@ -59,6 +122,19 @@ def reformat_time_axis(ax=None):
 
 
 class VitalsDataFrame(pd.DataFrame):
+    """Pandas class extension for holding the Vitals data
+
+    Parameters
+    ----------
+    pd : pandas.DataFrame
+        Input Pandas DataFrame object
+
+    Returns
+    -------
+    gfdlvitals.VitalsDataFrame
+        Class extension object
+    """
+
     # temporary properties
     _internal_names = pd.DataFrame._internal_names + ["internal_cache"]
     _internal_names_set = set(_internal_names)
@@ -71,6 +147,21 @@ class VitalsDataFrame(pd.DataFrame):
         return VitalsDataFrame
 
     def smooth(self, window, extrap=False):
+        """Apply a smoother to the dataset
+
+        Parameters
+        ----------
+        window : int
+            Smoothing filter length
+        extrap : bool, optional
+            Extrapolate data on the ends, by default False
+
+        Returns
+        -------
+        self
+            Smoothed dataset
+        """
+
         if window is None:
             _df = self
         else:
@@ -82,6 +173,18 @@ class VitalsDataFrame(pd.DataFrame):
         return _df
 
     def extend(self, maxlen):
+        """Extend VitalsDataFrame to a set length and pad with NaNs
+
+        Parameters
+        ----------
+        maxlen : int
+            New length of the VitalsDataFrame
+
+        Returns
+        -------
+        self
+            Extended dataset
+        """
         endyear = tuple(self.index[-1].timetuple())
         padding = np.arange(1, maxlen - len(self.index) + 1) + endyear[0]
         added_index = [cftime.DatetimeNoLeap(x, *endyear[1:]) for x in padding]
@@ -93,6 +196,24 @@ class VitalsDataFrame(pd.DataFrame):
         return _df
 
     def detrend(self, reference=None, order=1, anomaly=True, return_coefs=False):
+        """Detrend VitalsDataFrame object
+
+        Parameters
+        ----------
+        reference : gfdlvitals.DataFrame, optional
+            Reference VitalsDataFrame, by default None
+        order : int, optional
+            Polynomial order to use for fitting, by default 1
+        anomaly : bool, optional
+            Results as anomalies from the fit, by default True
+        return_coefs : bool, optional
+            Return polynomial fit coeffiecients, by default False
+
+        Returns
+        -------
+        self
+            Extended dataset
+        """
         tindex = np.array(
             [
                 cftime.date2num(x, "days since 0001-01-01", calendar="noleap")
@@ -126,6 +247,18 @@ class VitalsDataFrame(pd.DataFrame):
         return result
 
     def trend(self, order=1):
+        """Fits a trend to the VitalsDataFrame object
+
+        Parameters
+        ----------
+        order : int, optional
+            Polynomial order to use for fitting, by default 1
+
+        Returns
+        -------
+        self
+            Fitted trend dataset
+        """
         tindex = np.array(
             [
                 cftime.date2num(x, "days since 0001-01-01", calendar="noleap")
@@ -138,6 +271,26 @@ class VitalsDataFrame(pd.DataFrame):
 
 
 class Timeseries:
+    """Timeseries class object
+
+    Parameters
+    ----------
+    f : str, path-like
+        Input SQLite file
+    var : str
+        Variable to extract
+    scale : float, optional
+        Scale data by this factor, by default 1.0
+    multiply_by_area : bool, optional
+        Multiply variable by cell area before returning, by default False
+    legacy_land : bool, optional
+        Read legacy version of the land SQLite files, by default False
+    start : int, optional
+        Specify start year, by default None
+    end : int, optional
+        Specify end year, by default None
+    """
+
     def __init__(
         self,
         f,

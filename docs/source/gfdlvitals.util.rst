@@ -52,6 +52,14 @@ gfdlvitals.util.netcdf module
    :undoc-members:
    :show-inheritance:
 
+gfdlvitals.util.sql module
+--------------------------
+
+.. automodule:: gfdlvitals.util.sql
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
