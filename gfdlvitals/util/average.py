@@ -179,6 +179,8 @@ def process_var(variable, averager=None):
         )
 
         if averager == "ice":
+            if var.shape != variable.cell_area.shape:
+                return None
 
             # mask by latitude bands
             _v, _area = gmeantools.mask_latitude_bands(
@@ -233,6 +235,10 @@ def process_var(variable, averager=None):
             area_sum = None
 
         else:
+            if (averager == "land_lm4") and (_cell_depth is not None):
+                if var.shape[0] != _cell_depth.shape[0]:
+                    return None
+
             result, area_sum = gmeantools.area_mean(
                 var,
                 _area_weight,
@@ -241,6 +247,10 @@ def process_var(variable, averager=None):
                 region=reg,
                 cell_depth=_cell_depth,
             )
+
+            if (averager == "land_lm4") and (hasattr(result,'mask')):
+                return None
+
             gmeantools.write_sqlite_data(
                 sqlfile, variable.varname, variable.fyear[:4], result
             )
