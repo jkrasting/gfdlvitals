@@ -2,8 +2,9 @@
 
 import tarfile
 import netCDF4
+import xarray as xr
 
-__all__ = ["extract_from_tar", "in_mem_nc", "tar_member_exists"]
+__all__ = ["extract_from_tar", "in_mem_nc", "in_mem_xr", "tar_member_exists"]
 
 
 def extract_from_tar(tar, member, ncfile=False):
@@ -55,6 +56,23 @@ def in_mem_nc(data):
     """
 
     return netCDF4.Dataset("in-mem-file", mode="r", memory=data)
+
+
+def in_mem_xr(data):
+    """Wrapper to convert bytes object to xarray.Dataset
+
+    Parameters
+    ----------
+    data : byte stream object
+        In-memory object
+
+    Returns
+    -------
+    xarray.Dataset
+        In-memory xarray dataset object
+    """
+
+    return xr.open_dataset(data,use_cftime=True)
 
 
 def tar_member_exists(tar, member):
