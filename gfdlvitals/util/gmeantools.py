@@ -4,6 +4,7 @@ import pickle
 import sqlite3
 
 import numpy as np
+import xarray as xr
 import pkg_resources as pkgr
 
 __all__ = [
@@ -436,3 +437,38 @@ def standard_grid_cell_area(lat, lon, earth_radius=6371.0e3):
                 * np.abs(lon0 - lon1)
             )
     return area
+
+def xr_mask_weights(weights,geolat,region=None):
+    if region == "nh":
+        result = weights.where(geolat<30,0)
+    elif region == "sh":
+        result = weights.where(geolat>-30,0)
+    elif region == "tropics":
+        result = weights.where((geolat<-30) | (geolat>=30),0)
+    else:
+        result = weights
+    return result
+
+def xr_to_db(dset,sqlfile):
+    for var in list(dset.variables):
+        write_sqlite_data(sqlfile,var,"0001",str(dset[var].data))
+        if "units" in list(dset[var].attrs):
+            write_metadata(sqlfile, var, "units", dset[var].units)
+        if "long_name" in list(dset[var].attrs):
+            write_metadata(sqlfile, var, "long_name", dset[var].long_name)
+    return
+
+def xr_weighted_avg(dset,weights):
+        _dset = xr.Dataset()
+        variables = list(dset.variables.keys())
+        for x in variables:
+            if dset[x].dims == weights.dims:
+                _dset[x] = dset[x]
+                
+        _dset_weighted = _dset.weighted(weights).mean()
+        for x in list(_dset_weighted.variables):
+            _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
+            _dset_weighted[x].attrs = dset[x].attrs
+         
+        return _dset_weighted
+
