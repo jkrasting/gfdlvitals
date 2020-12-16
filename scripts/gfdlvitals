@@ -53,7 +53,7 @@ def arguments():
 
 def process_year(args,infile):
     #-- Set the model year string
-    fYear = str(infile.split('/')[-1].split('.')[0])
+    fyear = str(infile.split('/')[-1].split('.')[0])
 
     #-- Run the main code
     if args.modelclass == 'ESM2':
@@ -70,12 +70,12 @@ def process_year(args,infile):
       os.makedirs(args.outdir)
     for reg in ['global','nh','sh','tropics']:
       for component in ['Land','Atmos','Ocean','Ice','TOPAZ','COBALT','BLING','OBGC','Timing']:
-        if os.path.exists(fYear+'.'+reg+'Ave'+component+'.db'):
+        if os.path.exists(fyear+'.'+reg+'Ave'+component+'.db'):
           if not os.path.exists(args.outdir+'/'+reg+'Ave'+component+'.db'):
-            shutil.copyfile(fYear+'.'+reg+'Ave'+component+'.db',args.outdir+\
+            shutil.copyfile(fyear+'.'+reg+'Ave'+component+'.db',args.outdir+\
                 '/'+reg+'Ave'+component+'.db')
           else:
-            gfdlvitals.util.merge.merge(fYear+'.'+reg+'Ave'+component+'.db',
+            gfdlvitals.util.merge.merge(fyear+'.'+reg+'Ave'+component+'.db',
                 args.outdir+'/'+reg+'Ave'+component+'.db')
 
 
