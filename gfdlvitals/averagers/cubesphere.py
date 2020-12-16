@@ -11,37 +11,53 @@ import gfdlvitals.util.netcdf as netcdf
 
 import xarray as xr
 
-__all__ = ["average","xr_average"]
+__all__ = ["average", "xr_average"]
+
 
 def xr_average(fyear, tar, modules):
-    members = [x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.tile1.nc")]
-    
+    members = [
+        x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.tile1.nc")
+    ]
+
     for member in members:
         print(f"{fyear}.{member}.nc")
-        data_files = [netcdf.extract_from_tar(tar,f"{fyear}.{member}.tile{x}.nc") for x in range(1,7)]
+        data_files = [
+            netcdf.extract_from_tar(tar, f"{fyear}.{member}.tile{x}.nc")
+            for x in range(1, 7)
+        ]
         data_files = [netcdf.in_mem_xr(x) for x in data_files]
-        dset = xr.concat(data_files,"tile")
-    
+        dset = xr.concat(data_files, "tile")
+
         # Retain only time-dependent variables
         variables = list(dset.variables.keys())
         for x in variables:
             if "time" not in dset[x].dims:
                 del dset[x]
-    
+
         # Aggregate grid spec tiles
-        grid_files = [netcdf.extract_from_tar(tar,f"{fyear}.grid_spec.tile{x}.nc") for x in range(1,7)]
+        grid_files = [
+            netcdf.extract_from_tar(tar, f"{fyear}.grid_spec.tile{x}.nc")
+            for x in range(1, 7)
+        ]
         grid_files = [netcdf.in_mem_xr(x) for x in grid_files]
-        ds_grid = xr.concat(grid_files,"tile")
+        ds_grid = xr.concat(grid_files, "tile")
 
         dset["area"] = ds_grid["area"]
-                
-        areasum = dset["area"].sum()
+
         global_weights = dset.average_DT.astype("float") * dset.area
-    
-        for region in ['global','nh','sh','tropics']:
-            weights = gmeantools.xr_mask_weights(global_weights,ds_grid.grid_latt,region=region)
-            _dset_weighted = gmeantools.xr_weighted_avg(dset,weights)
-            gmeantools.xr_to_db(_dset_weighted,f"{fyear}.{region}Ave{modules[member]}.db")
+
+        for region in ["global", "nh", "sh", "tropics"]:
+            areasum = gmeantools.xr_mask_by_latitude(dset.area,ds_grid.grid_latt,region=region)
+            areasum = areasum.sum().data
+            gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db","area",fyear,areasum)
+
+            weights = gmeantools.xr_mask_by_latitude(
+                global_weights, ds_grid.grid_latt, region=region
+            )
+            _dset_weighted = gmeantools.xr_weighted_avg(dset, weights)
+            gmeantools.xr_to_db(
+                _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
+            )
 
 
 def average(grid_file, data_file, fyear, out, lab):

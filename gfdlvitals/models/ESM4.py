@@ -46,66 +46,7 @@ def routines(args, infile):
 
     # -- Land Fields
     modules = {"land_month": "Land"}
-    #generic_cubesphere_driver(
-    #    fYear, tar, modules, averagers.land_lm4.average, grid_spec="land_static"
-    #)
-
-    ## ## data_files = [netcdf.extract_from_tar(tar,f"{fyear}.land_month.tile{x}.nc") for x in range(1,7)]
-    ## ## data_files = [netcdf.in_mem_xr(x) for x in data_files]
-    ## ## dset = xr.concat(data_files,"tile")
-    
-    ## ## # Retain only time-dependent variables
-    ## ## variables = list(dset.variables.keys())
-    ## ## for x in variables:
-    ## ##     if "time" not in dset[x].dims:
-    ## ##         del dset[x]
-    
-    ## ## # Load grid data
-    ## ## grid_files = [netcdf.extract_from_tar(tar,f"{fyear}.land_static.tile{x}.nc") for x in range(1,7)]
-    ## ## grid_files = [netcdf.in_mem_xr(x) for x in grid_files]
-    ## ## ds_grid = xr.concat(grid_files,"tile")
-    
-    ## ## # Retain only time-invariant area fields
-    ## ## grid = xr.Dataset()
-    ## ## variables = list(ds_grid.variables.keys())
-    ## ## for x in variables:
-    ## ##     if "area" in x or "frac" in x:
-    ## ##         grid[x] = ds_grid[x]
-    
-    ## ## # Get List of cell measures
-    ## ## cell_measures = [dset[x].attrs['cell_measures'] for x in list(dset.variables) if "cell_measures" in list(dset[x].attrs.keys())]
-    ## ## cell_measures = sorted(list(set(cell_measures)))
-    
-    ## ## # Create dict of land groups based on cell measures
-    ## ## land_groups = {}
-    ## ## for x in cell_measures:
-    ## ##     land_groups[x] = xr.Dataset()
-    
-    ## ## # Loop over variables and assign them to groups
-    ## ## variables = list(dset.variables.keys())
-    ## ## for x in variables:
-    ## ##     if "cell_measures" in list(dset[x].attrs.keys()):
-    ## ##         _measure = dset[x].attrs["cell_measures"]
-    ## ##         land_groups[_measure][x] = dset[x]
-    
-    ## ## # Since natural tile area is time-dependent, ignore for now
-    ## ## if "area: area_ntrl" in cell_measures:
-    ## ##     cell_measures.remove("area: area_ntrl")
-    
-    ## ## # Loop over groups
-    ## ## for measure in cell_measures:
-    ## ##     _dset = land_groups[measure]
-    ## ##     
-    ## ##     _measure = measure.split(" ")[-1]
-    ## ##     _area = ds_grid[_measure]
-    ## ##     
-    ## ##     areasum = _area.sum()
-    ## ##     global_weights = dset.average_DT.astype("float") * _area
-    ## ##     
-    ## ##     for region in ['global','nh','sh','tropics']:
-    ## ##         weights = xr_mask_weights(global_weights,ds_grid.geolat_t,region=region)
-    ## ##         _dset_weighted = xr_weighted_avg(dset,global_weights)
-    ## ##         xr_to_db(_dset_weighted,f"{fyear}.{region}AveLand.db")
+    averagers.land_lm4.xr_average(fyear, tar, modules)
 
     # # -- Ice
     # modules = {"ice_month": "Ice"}

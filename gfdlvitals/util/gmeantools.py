@@ -438,20 +438,26 @@ def standard_grid_cell_area(lat, lon, earth_radius=6371.0e3):
             )
     return area
 
-def xr_mask_weights(weights,geolat,region=None):
+def xr_mask_by_latitude(arr,geolat,region=None):
+    _mask = (arr * 0.) + 1.
+
+    _nhmask = _mask.where(geolat>30.,0.)
+    _shmask = _mask.where(geolat<-30.,0.)
+    _tropics = _mask.where((geolat>=-30.) & (geolat<=30.),0.)
+
     if region == "nh":
-        result = weights.where(geolat<30,0)
+        result = arr * _nhmask
     elif region == "sh":
-        result = weights.where(geolat>-30,0)
+        result = arr * _shmask
     elif region == "tropics":
-        result = weights.where((geolat<-30) | (geolat>=30),0)
+        result = arr * _tropics
     else:
-        result = weights
+        result = arr
     return result
 
-def xr_to_db(dset,sqlfile):
+def xr_to_db(dset,fyear,sqlfile):
     for var in list(dset.variables):
-        write_sqlite_data(sqlfile,var,"0001",str(dset[var].data))
+        write_sqlite_data(sqlfile,var,str(fyear),str(dset[var].data))
         if "units" in list(dset[var].attrs):
             write_metadata(sqlfile, var, "units", dset[var].units)
         if "long_name" in list(dset[var].attrs):
