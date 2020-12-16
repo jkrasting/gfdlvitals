@@ -17,6 +17,7 @@ def xr_average(fyear, tar, modules):
     members = [x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.tile1.nc")]
     
     for member in members:
+        print(f"{fyear}.{member}.nc")
         data_files = [netcdf.extract_from_tar(tar,f"{fyear}.{member}.tile{x}.nc") for x in range(1,7)]
         data_files = [netcdf.in_mem_xr(x) for x in data_files]
         dset = xr.concat(data_files,"tile")
