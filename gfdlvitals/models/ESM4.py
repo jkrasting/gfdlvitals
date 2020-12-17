@@ -24,7 +24,6 @@ import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as netcdf
 
 
-
 def routines(args, infile):
 
     # -- Open the tarfile
