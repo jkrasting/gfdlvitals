@@ -7,9 +7,42 @@ from functools import partial
 from gfdlvitals.util.average import RichVariable
 from gfdlvitals.util.average import process_var
 
-import gfdlvitals.util.netcdf as nctools
+import gfdlvitals.util.gmeantools as gmeantools
+import gfdlvitals.util.netcdf as netcdf
 
-__all__ = ["average"]
+import xarray as xr
+__all__ = ["average", "xr_average"]
+
+def xr_average(fyear, tar, modules):
+    members = [
+        x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.nc")
+    ]
+
+    for member in members:
+        print(f"{fyear}.{member}.nc")
+        data_file = netcdf.extract_from_tar(tar,f"{fyear}.{member}.nc")
+        dset = netcdf.in_mem_xr(data_file)
+    
+        grid_file = netcdf.extract_from_tar(tar,f"{fyear}.ocean_static.nc")
+        ds_grid = netcdf.in_mem_xr(grid_file)
+    
+        # Retain only time-dependent variables
+        variables = list(dset.variables.keys())
+        for x in variables:
+            if "time" not in dset[x].dims:
+                del dset[x]
+                
+        _area = ds_grid["areacello"] * ds_grid["wet"]
+            
+        for region in ['global','nh','sh','tropics']:
+            _masked_area = gmeantools.xr_mask_by_latitude(_area,ds_grid.geolat,region=region)
+            gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db","area",fyear,_masked_area.sum().data)
+
+            weights = dset.average_DT.astype("float") * _masked_area
+            _dset_weighted = gmeantools.xr_weighted_avg(dset,weights)
+            gmeantools.xr_to_db(
+                _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
+            )
 
 
 def average(grid_file, data_file, fyear, out, lab):
@@ -29,8 +62,8 @@ def average(grid_file, data_file, fyear, out, lab):
         DB file name
     """
 
-    _grid_file = nctools.in_mem_nc(grid_file)
-    _data_file = nctools.in_mem_nc(data_file)
+    _grid_file = netcdf.in_mem_nc(grid_file)
+    _data_file = netcdf.in_mem_nc(data_file)
 
     varlist = list(_grid_file.variables.keys())
 

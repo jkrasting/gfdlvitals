@@ -70,6 +70,7 @@ def xr_average(fyear, tar, modules):
         for x in variables:
             if "cell_measures" in list(dset[x].attrs.keys()):
                 _measure = dset[x].attrs["cell_measures"]
+                dset[x].attrs["measure"] = _measure
                 land_groups[_measure][x] = dset[x]
 
         # Since natural tile area is time-dependent, ignore for now
@@ -83,18 +84,12 @@ def xr_average(fyear, tar, modules):
             _measure = measure.split(" ")[-1]
             _area = ds_grid[_measure]
 
-            global_weights = dset.average_DT.astype("float") * _area
-
             for region in ["global", "nh", "sh", "tropics"]:
-                areasum = gmeantools.xr_mask_by_latitude(_area,ds_grid.geolat_t,region=region)
-                areasum = areasum.sum().data
-                print(_measure,areasum)
-                gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db",_measure,fyear,areasum)
+                _masked_area = gmeantools.xr_mask_by_latitude(_area,ds_grid.geolat_t,region=region)
+                gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db",_measure,fyear,_masked_area.sum().data)
 
-                weights = gmeantools.xr_mask_by_latitude(
-                    global_weights, ds_grid.geolat_t, region=region
-                )
-                _dset_weighted = gmeantools.xr_weighted_avg(dset, global_weights)
+                weights = dset.average_DT.astype("float") * _masked_area
+                _dset_weighted = gmeantools.xr_weighted_avg(dset, weights)
                 gmeantools.xr_to_db(
                     _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
                 )

@@ -462,6 +462,8 @@ def xr_to_db(dset,fyear,sqlfile):
             write_metadata(sqlfile, var, "units", dset[var].units)
         if "long_name" in list(dset[var].attrs):
             write_metadata(sqlfile, var, "long_name", dset[var].long_name)
+        if "measure" in list(dset[var].attrs):
+            write_metadata(sqlfile, var, "cell_measure", dset[var].measure)
     return
 
 def xr_weighted_avg(dset,weights):
@@ -471,7 +473,8 @@ def xr_weighted_avg(dset,weights):
             if dset[x].dims == weights.dims:
                 _dset[x] = dset[x]
                 
-        _dset_weighted = _dset.weighted(weights).mean()
+        _dset_weighted = _dset.weighted(weights)
+        _dset_weighted = _dset_weighted.mean()
         for x in list(_dset_weighted.variables):
             _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
             _dset_weighted[x].attrs = dset[x].attrs

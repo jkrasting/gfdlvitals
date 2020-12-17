@@ -10,11 +10,68 @@ from gfdlvitals.util.average import RichVariable
 from gfdlvitals.util.average import process_var
 
 import gfdlvitals.util.gmeantools as gmeantools
-import gfdlvitals.util.netcdf as nctools
+import gfdlvitals.util.netcdf as netcdf
 
-__all__ = ["average"]
+import xarray as xr
+__all__ = ["average", "xr_average"]
 
+def xr_average(fyear, tar, modules):
+    members = [
+        x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.nc")
+    ]
 
+    for member in members:
+        print(f"{fyear}.{member}.nc")
+        data_file = netcdf.extract_from_tar(tar,f"{fyear}.ice_month.nc")
+        dset = netcdf.in_mem_xr(data_file)
+    
+        grid_file = netcdf.extract_from_tar(tar,f"{fyear}.ice_static.nc")
+        ds_grid = netcdf.in_mem_xr(grid_file)
+    
+        # Retain only time-dependent variables
+        variables = list(dset.variables.keys())
+        for x in variables:
+            if "time" not in dset[x].dims:
+                del dset[x]
+            if x in ["CN"]:
+                attrs = dset[x].attrs
+                dset[x] = dset[x].sum(("ct")).assign_attrs(dset[x].attrs)
+    
+        earth_radius = 6371.0e3  # Radius of the Earth in 'm'
+        _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius ** 2)
+    
+        #--- todo Add in concentration and extent
+    
+        for region in ['global','nh','sh']:
+            _masked_area = gmeantools.xr_mask_by_latitude(_area,ds_grid.GEOLAT,region=region)
+            gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db","area",fyear,_masked_area.sum().data)
+
+            # area-weight but not time_weight
+            weights = _masked_area
+            _dset = dset.copy()
+
+            for x in list(_dset.variables):
+                if tuple(_dset[x].dims)[-3::] == ('time','yT', 'xT'):
+                    _dset[x] = ((_dset[x]*weights).sum(('yT','xT'))/weights.sum()).assign_attrs(dset[x].attrs)
+                else:
+                    del _dset[x]
+
+            _dset_max = _dset.max(("time"))
+            newvars = dict([(x,x+"_max") for x in list(_dset_max.variables)])
+            _dset_max = _dset_max.rename(newvars)
+
+            _dset_min = _dset.min(("time"))
+            newvars = dict([(x,x+"_min") for x in list(_dset_min.variables)])
+            _dset_min = _dset_min.rename(newvars)
+
+            weights = dset.average_DT.astype("float")
+            _dset_weighted = gmeantools.xr_weighted_avg(_dset,weights)
+            newvars = dict([(x,x+"_mean") for x in list(_dset_weighted.variables)])
+            _dset_weighted = _dset_weighted.rename(newvars)
+            gmeantools.xr_to_db(_dset_weighted,fyear,f"{fyear}.{region}AveIce.db")
+            gmeantools.xr_to_db(_dset_max,fyear,f"{fyear}.{region}AveIce.db")
+            gmeantools.xr_to_db(_dset_min,fyear,f"{fyear}.{region}AveIce.db")
+    
 def average(grid_file, data_file, fyear, out, lab):
     """Mid-level averaging routine
 
@@ -32,8 +89,8 @@ def average(grid_file, data_file, fyear, out, lab):
         DB file name
     """
 
-    _grid_file = nctools.in_mem_nc(grid_file)
-    _data_file = nctools.in_mem_nc(data_file)
+    _grid_file = netcdf.in_mem_nc(grid_file)
+    _data_file = netcdf.in_mem_nc(data_file)
 
     geolon = _grid_file.variables["GEOLON"][:]
     geolat = _grid_file.variables["GEOLAT"][:]
