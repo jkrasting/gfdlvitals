@@ -77,6 +77,9 @@ def xr_average(fyear, tar, modules):
         if "area: area_ntrl" in cell_measures:
             cell_measures.remove("area: area_ntrl")
 
+        if "area: glac_area" in cell_measures:
+            cell_measures.remove("area: glac_area")
+
         # Loop over groups
         for measure in cell_measures:
             _dset = land_groups[measure]
@@ -84,12 +87,15 @@ def xr_average(fyear, tar, modules):
             _measure = measure.split(" ")[-1]
             _area = ds_grid[_measure]
 
-            for region in ["global", "nh", "sh", "tropics"]:
+            #for region in ["global", "nh", "sh", "tropics"]:
+            for region in ["tropics"]:
                 _masked_area = gmeantools.xr_mask_by_latitude(_area,ds_grid.geolat_t,region=region)
                 gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db",_measure,fyear,_masked_area.sum().data)
 
+                #_masked_area = _masked_area.fillna(0)
+
                 weights = dset.average_DT.astype("float") * _masked_area
-                _dset_weighted = gmeantools.xr_weighted_avg(dset, weights)
+                _dset_weighted = gmeantools.xr_weighted_avg(_dset, weights)
                 gmeantools.xr_to_db(
                     _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
                 )

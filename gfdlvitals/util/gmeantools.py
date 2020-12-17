@@ -439,20 +439,18 @@ def standard_grid_cell_area(lat, lon, earth_radius=6371.0e3):
     return area
 
 def xr_mask_by_latitude(arr,geolat,region=None):
-    _mask = (arr * 0.) + 1.
 
-    _nhmask = _mask.where(geolat>30.,0.)
-    _shmask = _mask.where(geolat<-30.,0.)
-    _tropics = _mask.where((geolat>=-30.) & (geolat<=30.),0.)
+    arr = arr.copy()
 
     if region == "nh":
-        result = arr * _nhmask
+        result = arr.where(geolat>30.,0.)
     elif region == "sh":
-        result = arr * _shmask
+        result = arr.where(geolat<-30.,0.)
     elif region == "tropics":
-        result = arr * _tropics
+        result = arr.where((geolat>=-30.) & (geolat<=30.),0.)
     else:
         result = arr
+
     return result
 
 def xr_to_db(dset,fyear,sqlfile):
@@ -473,8 +471,7 @@ def xr_weighted_avg(dset,weights):
             if dset[x].dims == weights.dims:
                 _dset[x] = dset[x]
                 
-        _dset_weighted = _dset.weighted(weights)
-        _dset_weighted = _dset_weighted.mean()
+        _dset_weighted = _dset.weighted(weights).mean()
         for x in list(_dset_weighted.variables):
             _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
             _dset_weighted[x].attrs = dset[x].attrs
