@@ -120,7 +120,27 @@ if __name__ == "__main__":
     cliargs = arguments()
     dsets = [gfdlvitals.open_db(x) for x in cliargs.dbfiles]
 
-    variable_list = sorted(list(dsets[0].columns))
+    all_variables = [set(x.columns) for x in dsets]
+    common_variables = set.intersection(*all_variables)
+    
+    extra_variables = [sorted(list(x-common_variables)) for x in all_variables]
+
+    for x,varlist in enumerate(extra_variables):
+        if len(varlist) > 0:
+            print(f"The following variables are availble only "+
+                  f"{cliargs.dbfiles[x]} and will not be plotted:\n")
+
+            if len(varlist) % 2 != 0:
+                varlist.append(" ")
+            
+            split = int(len(varlist)/2)
+            _list1 = varlist[0:split]
+            _list2 = varlist[split:]
+            for key, value in zip(_list1,_list2):
+                print("{0:<20s} {1}".format(key, value))
+            print("\n")
+
+    variable_list = sorted(list(common_variables))
 
     mplfig, axes = gfdlvitals.plot.plot_timeseries(
         dsets,
