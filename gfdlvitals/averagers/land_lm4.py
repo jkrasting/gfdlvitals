@@ -31,6 +31,10 @@ def xr_average(fyear, tar, modules):
         data_files = [netcdf.in_mem_xr(x) for x in data_files]
         dset = xr.concat(data_files, "tile")
 
+        # Calculate cell depth
+        depth = dset["zhalf_soil"].data
+        depth = np.array([depth[x]-depth[x-1] for x in range(1,len(depth))])
+
         # Retain only time-dependent variables
         variables = list(dset.variables.keys())
         for x in variables:
@@ -59,6 +63,7 @@ def xr_average(fyear, tar, modules):
             if "cell_measures" in list(dset[x].attrs.keys())
         ]
         cell_measures = sorted(list(set(cell_measures)))
+        print(cell_measures)
 
         # Create dict of land groups based on cell measures
         land_groups = {}
