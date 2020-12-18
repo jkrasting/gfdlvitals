@@ -326,12 +326,14 @@ class Timeseries:
         self.data = np.array(self.data) * scale
         if "long_name" in tables:
             _ = cur.execute(f"SELECT value FROM long_name where var='{var}'")
-            self.long_name = cur.fetchone()[0]
+            result = cur.fetchone()
+            self.long_name = result[0] if isinstance(result,tuple) else None
         else:
             self.long_name = None
         if "units" in tables:
             _ = cur.execute(f"SELECT value FROM units where var='{var}'")
-            self.units = cur.fetchone()[0]
+            result = cur.fetchone()
+            self.units = result[0] if isinstance(result,tuple) else None
         else:
             self.units = None
         cur.close()
@@ -387,16 +389,13 @@ def open_db(
     years = []
     skipped = []
     for var in variables:
-        try:
-            tsobj = Timeseries(
-                dbfile, var, legacy_land=legacy_land, start=start, end=end
-            )
-            if len(tsobj.t) > 0:
-                data[var] = tsobj.data
-                years = years + list(tsobj.t)
-                attributes[var] = {"long_name": tsobj.long_name, "units": tsobj.units}
-        except:
-            skipped.append(var)
+        tsobj = Timeseries(
+            dbfile, var, legacy_land=legacy_land, start=start, end=end
+        )
+        if len(tsobj.t) > 0:
+            data[var] = tsobj.data
+            years = years + list(tsobj.t)
+            attributes[var] = {"long_name": tsobj.long_name, "units": tsobj.units}
 
     years = list(set(years))
     years = [x + float(yearshift) for x in years]
