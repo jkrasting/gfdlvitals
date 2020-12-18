@@ -20,47 +20,35 @@ def routines(args, infile):
     tar = tarfile.open(infile)
     members = tar.getnames()
     # -- Set the model year string
-    fYear = str(infile.split("/")[-1].split(".")[0])
-    print("Processing " + fYear)
-
-    # -- Land
-    modules = {"land_month": "Land"}
-    generic_driver(
-        fYear,
-        tar,
-        modules,
-        averagers.land_lm3.average,
-        static_file=("land_static", "land_month"),
-    )
+    fyear = str(infile.split("/")[-1].split(".")[0])
+    print("Processing " + fyear)
 
     # -- Atmos
     modules = {
         "atmos_month": "Atmos",
         "atmos_level": "Atmos",
     }
-    generic_driver(fYear, tar, modules, averagers.latlon.average, static_file=None)
+    averagers.latlon.xr_average(fyear, tar, modules)
+
+    # -- Land
+    modules = {"land_month": "Land"}
+    generic_driver(
+        fyear,
+        tar,
+        modules,
+        averagers.land_lm3.average,
+        static_file=("land_static", "land_month"),
+    )
 
     # -- Ice
     modules = {"ice_month": "Ice"}
-    generic_driver(
-        fYear,
-        tar,
-        modules,
-        averagers.ice.average,
-        static_file=("ice_static", "ice_month"),
-    )
+    averagers.ice.xr_average(fyear, tar, modules)
 
     # -- Ocean
     modules = {
         "ocean_month": "Ocean",
     }
-    generic_driver(
-        fYear,
-        tar,
-        modules,
-        averagers.tripolar.average,
-        static_file=("ocean_static", "ocean_month"),
-    )
+    averagers.tripolar.xr_average(fyear, tar, modules)
 
     # -- OBGC
     modules = {
@@ -70,13 +58,7 @@ def routines(args, infile):
         "ocean_topaz_tracers_month_z": "OBGC",
         "ocean_topaz_wc_btm": "OBGC",
     }
-    generic_driver(
-        fYear,
-        tar,
-        modules,
-        averagers.tripolar.average,
-        static_file=("ocean_static", "ocean_month"),
-    )
+    averagers.tripolar.xr_average(fyear, tar, modules)
 
     # -- Close out the tarfile handle
     tar.close()

@@ -25,9 +25,10 @@ def xr_average(fyear, tar, modules):
         data_file = netcdf.extract_from_tar(tar,f"{fyear}.ice_month.nc")
         dset = netcdf.in_mem_xr(data_file)
     
-        grid_file = netcdf.extract_from_tar(tar,f"{fyear}.ice_static.nc")
+        grid_file = f"{fyear}.ice_static.nc" if netcdf.tar_member_exists(tar,f"{fyear}.ice_static.nc") else f"{fyear}.ice_month.nc"
+        grid_file = netcdf.extract_from_tar(tar,grid_file)
         ds_grid = netcdf.in_mem_xr(grid_file)
-    
+
         # Retain only time-dependent variables
         variables = list(dset.variables.keys())
         for x in variables:
@@ -53,6 +54,8 @@ def xr_average(fyear, tar, modules):
             for x in list(_dset.variables):
                 if tuple(_dset[x].dims)[-3::] == ('time','yT', 'xT'):
                     _dset[x] = ((_dset[x]*weights).sum(('yT','xT'))/weights.sum()).assign_attrs(dset[x].attrs)
+                elif tuple(_dset[x].dims)[-3::] == ('time', 'yt', 'xt'):
+                    _dset[x] = ((_dset[x]*weights).sum(('yt','xt'))/weights.sum()).assign_attrs(dset[x].attrs)
                 else:
                     del _dset[x]
 
