@@ -440,6 +440,21 @@ def standard_grid_cell_area(lat, lon, earth_radius=6371.0e3):
 
 
 def xr_mask_by_latitude(arr, geolat, region=None):
+    """Masks an xarray object based on a latitude range
+
+    Parameters
+    ----------
+    arr : xarray.DataArray or xarray.DataSet
+        Input unmasked object
+    geolat : xarray.DataArray
+        Data Array of latitude coordinates
+    region : str, optional
+        Predefined region of "global","nh","sh","tropics", by default None
+
+    Returns
+    -------
+    Masked xarray data object
+    """
 
     arr = arr.copy()
 
@@ -456,6 +471,17 @@ def xr_mask_by_latitude(arr, geolat, region=None):
 
 
 def xr_to_db(dset, fyear, sqlfile):
+    """Writes Xarray dataset to SQLite format
+
+    Parameters
+    ----------
+    dset : xarray.DataSet
+        Input dataset
+    fyear : str
+        Year label (YYYY)
+    sqlfile : str
+        Filename of output db file
+    """
     for var in list(dset.variables):
         write_sqlite_data(sqlfile, var, str(fyear), str(dset[var].data))
         if "units" in list(dset[var].attrs):
@@ -464,22 +490,34 @@ def xr_to_db(dset, fyear, sqlfile):
             write_metadata(sqlfile, var, "long_name", dset[var].long_name)
         if "measure" in list(dset[var].attrs):
             write_metadata(sqlfile, var, "cell_measure", dset[var].measure)
-    return
 
 
 def xr_weighted_avg(dset, weights):
+    """Generates weighted space and time average of an xarray DataSet
+
+    Parameters
+    ----------
+    dset : xarray.DataSet
+        Input dataset
+    weights : xarray.DataArray or list
+        Array to use for weights
+
+    Returns
+    -------
+    xarray DataSet containing weighted averages
+    """
     _weights = [weights] if not isinstance(weights, list) else weights
 
     _dset = xr.Dataset()
     result = xr.Dataset()
 
-    for weights in _weights:
+    for weight in _weights:
         variables = list(dset.variables.keys())
         for x in variables:
-            if sorted(dset[x].dims) == sorted(weights.dims):
+            if sorted(dset[x].dims) == sorted(weight.dims):
                 _dset[x] = dset[x]
 
-        _dset_weighted = _dset.weighted(weights).mean()
+        _dset_weighted = _dset.weighted(weight).mean()
         for x in list(_dset_weighted.variables):
             _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
             _dset_weighted[x].attrs = dset[x].attrs
