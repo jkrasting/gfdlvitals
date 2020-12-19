@@ -465,16 +465,23 @@ def xr_to_db(dset,fyear,sqlfile):
     return
 
 def xr_weighted_avg(dset,weights):
+        _weights = [weights] if not isinstance(weights,list) else weights
+
         _dset = xr.Dataset()
-        variables = list(dset.variables.keys())
-        for x in variables:
-            if dset[x].dims == weights.dims:
-                _dset[x] = dset[x]
-                
-        _dset_weighted = _dset.weighted(weights).mean()
-        for x in list(_dset_weighted.variables):
-            _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
-            _dset_weighted[x].attrs = dset[x].attrs
-         
-        return _dset_weighted
+        result = xr.Dataset()
+
+        for weights in _weights:
+            variables = list(dset.variables.keys())
+            for x in variables:
+                if sorted(dset[x].dims) == sorted(weights.dims):
+                    _dset[x] = dset[x]
+                    
+            _dset_weighted = _dset.weighted(weights).mean()
+            for x in list(_dset_weighted.variables):
+                _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
+                _dset_weighted[x].attrs = dset[x].attrs
+        
+            result = result.merge(_dset_weighted)
+ 
+        return result
 

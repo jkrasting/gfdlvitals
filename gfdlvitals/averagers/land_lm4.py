@@ -33,7 +33,9 @@ def xr_average(fyear, tar, modules):
 
         # Calculate cell depth
         depth = dset["zhalf_soil"].data
-        depth = np.array([depth[x]-depth[x-1] for x in range(1,len(depth))])
+        depth = [depth[x]-depth[x-1] for x in range(1,len(depth))]
+        dset["depth"] = xr.DataArray(depth,dims=("zfull_soil"))
+        depth = dset["depth"]
 
         # Retain only time-dependent variables
         variables = list(dset.variables.keys())
@@ -63,7 +65,6 @@ def xr_average(fyear, tar, modules):
             if "cell_measures" in list(dset[x].attrs.keys())
         ]
         cell_measures = sorted(list(set(cell_measures)))
-        print(cell_measures)
 
         # Create dict of land groups based on cell measures
         land_groups = {}
@@ -75,7 +76,7 @@ def xr_average(fyear, tar, modules):
         for x in variables:
             if "cell_measures" in list(dset[x].attrs.keys()):
                 _measure = dset[x].attrs["cell_measures"]
-                dset[x].attrs["measure"] = _measure
+                dset[x].attrs["measure"] = _measure.split(" ")[-1]
                 land_groups[_measure][x] = dset[x]
 
         # Since natural tile area is time-dependent, ignore for now
@@ -99,7 +100,16 @@ def xr_average(fyear, tar, modules):
                 #_masked_area = _masked_area.fillna(0)
 
                 weights = dset.average_DT.astype("float") * _masked_area
+                if _measure == "soil_area":
+                    area_x_depth = _masked_area * depth
+                    gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db","soil_volume",fyear,area_x_depth.sum().data)
+                    weights = [weights,(weights*depth).transpose("tile", "time", "zfull_soil", "grid_yt", "grid_xt")]
+                    for x in list(_dset.variables):
+                        if "zfull_soil" in list(_dset[x].dims):
+                            _dset[x].attrs["measure"] = "soil_volume"
+                   
                 _dset_weighted = gmeantools.xr_weighted_avg(_dset, weights)
+
                 gmeantools.xr_to_db(
                     _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
                 )
