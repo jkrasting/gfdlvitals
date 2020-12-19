@@ -9,7 +9,7 @@ extension-pkg-whitelist=
 fail-under=10.0
 
 # Add files or directories to the blacklist. They should be base names, not
-# paths.
+# pat.
 ignore=CVS
 
 # Add files or directories matching the regex patterns to the blacklist. The
@@ -353,7 +353,7 @@ ignore-docstrings=yes
 ignore-imports=no
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=15
 
 
 [BASIC]

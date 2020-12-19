@@ -3,6 +3,7 @@
 import xarray as xr
 
 import gfdlvitals.util.gmeantools as gmeantools
+import gfdlvitals.util.xrtools as xrtools
 import gfdlvitals.util.netcdf as netcdf
 
 __all__ = ["xr_average"]
@@ -51,7 +52,7 @@ def xr_average(fyear, tar, modules):
         dset["area"] = ds_grid["area"]
 
         for region in ["global", "nh", "sh", "tropics"]:
-            _masked_area = gmeantools.xr_mask_by_latitude(
+            _masked_area = xrtools.xr_mask_by_latitude(
                 dset.area, ds_grid.grid_latt, region=region
             )
             gmeantools.write_sqlite_data(
@@ -62,7 +63,7 @@ def xr_average(fyear, tar, modules):
             )
 
             weights = dset.average_DT.astype("float") * _masked_area
-            _dset_weighted = gmeantools.xr_weighted_avg(dset, weights)
-            gmeantools.xr_to_db(
+            _dset_weighted = xrtools.xr_weighted_avg(dset, weights)
+            xrtools.xr_to_db(
                 _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
             )

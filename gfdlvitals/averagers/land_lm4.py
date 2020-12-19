@@ -3,6 +3,7 @@
 import xarray as xr
 
 import gfdlvitals.util.gmeantools as gmeantools
+import gfdlvitals.util.xrtools as xrtools
 import gfdlvitals.util.netcdf as netcdf
 
 
@@ -98,7 +99,7 @@ def xr_average(fyear, tar, modules):
             _area = ds_grid[_measure]
 
             for region in ["global", "nh", "sh", "tropics"]:
-                _masked_area = gmeantools.xr_mask_by_latitude(
+                _masked_area = xrtools.xr_mask_by_latitude(
                     _area, ds_grid.geolat_t, region=region
                 )
                 gmeantools.write_sqlite_data(
@@ -129,8 +130,8 @@ def xr_average(fyear, tar, modules):
                         if "zfull_soil" in list(_dset[x].dims):
                             _dset[x].attrs["measure"] = "soil_volume"
 
-                _dset_weighted = gmeantools.xr_weighted_avg(_dset, weights)
+                _dset_weighted = xrtools.xr_weighted_avg(_dset, weights)
 
-                gmeantools.xr_to_db(
+                xrtools.xr_to_db(
                     _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
                 )
