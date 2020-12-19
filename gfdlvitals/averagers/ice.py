@@ -12,6 +12,8 @@ from gfdlvitals.util.average import process_var
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as netcdf
 
+import warnings
+
 import xarray as xr
 __all__ = ["average", "xr_average"]
 
@@ -34,10 +36,17 @@ def xr_average(fyear, tar, modules):
         for x in variables:
             if "time" not in dset[x].dims:
                 del dset[x]
-            if x in ["CN"]:
+            if x == "CN":
                 attrs = dset[x].attrs
                 dset[x] = dset[x].sum(("ct")).assign_attrs(dset[x].attrs)
-    
+
+        if "CN" in list(dset.variables.keys()):
+            concentration = dset["CN"]
+        elif "siconc" in list(dset.variables.keys()):
+            concentration = dset["siconc"]
+        else:
+            warnings.warn("Unable to determine sea ice concentation")
+
         earth_radius = 6371.0e3  # Radius of the Earth in 'm'
         _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius ** 2)
     
@@ -51,13 +60,27 @@ def xr_average(fyear, tar, modules):
             weights = _masked_area
             _dset = dset.copy()
 
+
+            ones = (concentration * 0.) + 1.0
+            ice_area = (ones.where(concentration>0.,0.)*_masked_area)
+            extent = (ones.where(concentration>0.15,0.)*_masked_area)
+
+            ice_area_attrs = {"long_name":"area covered by sea ice","units":"million km2"}
+            extent_attrs = {"long_name":"sea ice extent","units":"million km2"}
+
             for x in list(_dset.variables):
                 if tuple(_dset[x].dims)[-3::] == ('time','yT', 'xT'):
                     _dset[x] = ((_dset[x]*weights).sum(('yT','xT'))/weights.sum()).assign_attrs(dset[x].attrs)
+                    _dset["ice_area"] = (ice_area.sum(('yT','xT'))*1.e-12).assign_attrs(ice_area_attrs)
+                    _dset["extent"] = (extent.sum(('yT','xT'))*1.e-12).assign_attrs(extent_attrs)
                 elif tuple(_dset[x].dims)[-3::] == ('time', 'yt', 'xt'):
                     _dset[x] = ((_dset[x]*weights).sum(('yt','xt'))/weights.sum()).assign_attrs(dset[x].attrs)
+                    _dset["ice_area"] = (ice_area.sum(('yt','xt'))*1.e-12).assign_attrs(ice_area_attrs)
+                    _dset["extent"] = (extent.sum(('yt','xt'))*1.e-12).assign_attrs(extent_attrs)
                 else:
                     del _dset[x]
+
+
 
             _dset_max = _dset.max(("time"))
             newvars = dict([(x,x+"_max") for x in list(_dset_max.variables)])
