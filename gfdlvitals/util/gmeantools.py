@@ -438,24 +438,26 @@ def standard_grid_cell_area(lat, lon, earth_radius=6371.0e3):
             )
     return area
 
-def xr_mask_by_latitude(arr,geolat,region=None):
+
+def xr_mask_by_latitude(arr, geolat, region=None):
 
     arr = arr.copy()
 
     if region == "nh":
-        result = arr.where(geolat>30.,0.)
+        result = arr.where(geolat > 30.0, 0.0)
     elif region == "sh":
-        result = arr.where(geolat<-30.,0.)
+        result = arr.where(geolat < -30.0, 0.0)
     elif region == "tropics":
-        result = arr.where((geolat>=-30.) & (geolat<=30.),0.)
+        result = arr.where((geolat >= -30.0) & (geolat <= 30.0), 0.0)
     else:
         result = arr
 
     return result
 
-def xr_to_db(dset,fyear,sqlfile):
+
+def xr_to_db(dset, fyear, sqlfile):
     for var in list(dset.variables):
-        write_sqlite_data(sqlfile,var,str(fyear),str(dset[var].data))
+        write_sqlite_data(sqlfile, var, str(fyear), str(dset[var].data))
         if "units" in list(dset[var].attrs):
             write_metadata(sqlfile, var, "units", dset[var].units)
         if "long_name" in list(dset[var].attrs):
@@ -464,24 +466,24 @@ def xr_to_db(dset,fyear,sqlfile):
             write_metadata(sqlfile, var, "cell_measure", dset[var].measure)
     return
 
-def xr_weighted_avg(dset,weights):
-        _weights = [weights] if not isinstance(weights,list) else weights
 
-        _dset = xr.Dataset()
-        result = xr.Dataset()
+def xr_weighted_avg(dset, weights):
+    _weights = [weights] if not isinstance(weights, list) else weights
 
-        for weights in _weights:
-            variables = list(dset.variables.keys())
-            for x in variables:
-                if sorted(dset[x].dims) == sorted(weights.dims):
-                    _dset[x] = dset[x]
-                    
-            _dset_weighted = _dset.weighted(weights).mean()
-            for x in list(_dset_weighted.variables):
-                _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
-                _dset_weighted[x].attrs = dset[x].attrs
-        
-            result = result.merge(_dset_weighted)
- 
-        return result
+    _dset = xr.Dataset()
+    result = xr.Dataset()
 
+    for weights in _weights:
+        variables = list(dset.variables.keys())
+        for x in variables:
+            if sorted(dset[x].dims) == sorted(weights.dims):
+                _dset[x] = dset[x]
+
+        _dset_weighted = _dset.weighted(weights).mean()
+        for x in list(_dset_weighted.variables):
+            _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
+            _dset_weighted[x].attrs = dset[x].attrs
+
+        result = result.merge(_dset_weighted)
+
+    return result

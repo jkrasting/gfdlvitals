@@ -248,7 +248,7 @@ def process_var(variable, averager=None):
                 cell_depth=_cell_depth,
             )
 
-            if (averager == "land_lm4") and (hasattr(result,'mask')):
+            if (averager == "land_lm4") and (hasattr(result, "mask")):
                 return None
 
             gmeantools.write_sqlite_data(

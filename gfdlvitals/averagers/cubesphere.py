@@ -45,8 +45,15 @@ def xr_average(fyear, tar, modules):
         dset["area"] = ds_grid["area"]
 
         for region in ["global", "nh", "sh", "tropics"]:
-            _masked_area = gmeantools.xr_mask_by_latitude(dset.area,ds_grid.grid_latt,region=region)
-            gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db","area",fyear,_masked_area.sum().data)
+            _masked_area = gmeantools.xr_mask_by_latitude(
+                dset.area, ds_grid.grid_latt, region=region
+            )
+            gmeantools.write_sqlite_data(
+                f"{fyear}.{region}Ave{modules[member]}.db",
+                "area",
+                fyear,
+                _masked_area.sum().data,
+            )
 
             weights = dset.average_DT.astype("float") * _masked_area
             _dset_weighted = gmeantools.xr_weighted_avg(dset, weights)

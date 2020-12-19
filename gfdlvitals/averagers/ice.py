@@ -15,20 +15,24 @@ import gfdlvitals.util.netcdf as netcdf
 import warnings
 
 import xarray as xr
+
 __all__ = ["average", "xr_average"]
 
+
 def xr_average(fyear, tar, modules):
-    members = [
-        x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.nc")
-    ]
+    members = [x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.nc")]
 
     for member in members:
         print(f"{fyear}.{member}.nc")
-        data_file = netcdf.extract_from_tar(tar,f"{fyear}.ice_month.nc")
+        data_file = netcdf.extract_from_tar(tar, f"{fyear}.ice_month.nc")
         dset = netcdf.in_mem_xr(data_file)
-    
-        grid_file = f"{fyear}.ice_static.nc" if netcdf.tar_member_exists(tar,f"{fyear}.ice_static.nc") else f"{fyear}.ice_month.nc"
-        grid_file = netcdf.extract_from_tar(tar,grid_file)
+
+        grid_file = (
+            f"{fyear}.ice_static.nc"
+            if netcdf.tar_member_exists(tar, f"{fyear}.ice_static.nc")
+            else f"{fyear}.ice_month.nc"
+        )
+        grid_file = netcdf.extract_from_tar(tar, grid_file)
         ds_grid = netcdf.in_mem_xr(grid_file)
 
         # Retain only time-dependent variables
@@ -49,55 +53,75 @@ def xr_average(fyear, tar, modules):
 
         earth_radius = 6371.0e3  # Radius of the Earth in 'm'
         _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius ** 2)
-    
-        #--- todo Add in concentration and extent
-    
-        for region in ['global','nh','sh']:
-            _masked_area = gmeantools.xr_mask_by_latitude(_area,ds_grid.GEOLAT,region=region)
-            gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db","area",fyear,_masked_area.sum().data)
+
+        # --- todo Add in concentration and extent
+
+        for region in ["global", "nh", "sh"]:
+            _masked_area = gmeantools.xr_mask_by_latitude(
+                _area, ds_grid.GEOLAT, region=region
+            )
+            gmeantools.write_sqlite_data(
+                f"{fyear}.{region}Ave{modules[member]}.db",
+                "area",
+                fyear,
+                _masked_area.sum().data,
+            )
 
             # area-weight but not time_weight
             weights = _masked_area
             _dset = dset.copy()
 
+            ones = (concentration * 0.0) + 1.0
+            ice_area = ones.where(concentration > 0.0, 0.0) * _masked_area
+            extent = ones.where(concentration > 0.15, 0.0) * _masked_area
 
-            ones = (concentration * 0.) + 1.0
-            ice_area = (ones.where(concentration>0.,0.)*_masked_area)
-            extent = (ones.where(concentration>0.15,0.)*_masked_area)
-
-            ice_area_attrs = {"long_name":"area covered by sea ice","units":"million km2"}
-            extent_attrs = {"long_name":"sea ice extent","units":"million km2"}
+            ice_area_attrs = {
+                "long_name": "area covered by sea ice",
+                "units": "million km2",
+            }
+            extent_attrs = {"long_name": "sea ice extent", "units": "million km2"}
 
             for x in list(_dset.variables):
-                if tuple(_dset[x].dims)[-3::] == ('time','yT', 'xT'):
-                    _dset[x] = ((_dset[x]*weights).sum(('yT','xT'))/weights.sum()).assign_attrs(dset[x].attrs)
-                    _dset["ice_area"] = (ice_area.sum(('yT','xT'))*1.e-12).assign_attrs(ice_area_attrs)
-                    _dset["extent"] = (extent.sum(('yT','xT'))*1.e-12).assign_attrs(extent_attrs)
-                elif tuple(_dset[x].dims)[-3::] == ('time', 'yt', 'xt'):
-                    _dset[x] = ((_dset[x]*weights).sum(('yt','xt'))/weights.sum()).assign_attrs(dset[x].attrs)
-                    _dset["ice_area"] = (ice_area.sum(('yt','xt'))*1.e-12).assign_attrs(ice_area_attrs)
-                    _dset["extent"] = (extent.sum(('yt','xt'))*1.e-12).assign_attrs(extent_attrs)
+                if tuple(_dset[x].dims)[-3::] == ("time", "yT", "xT"):
+                    _dset[x] = (
+                        (_dset[x] * weights).sum(("yT", "xT")) / weights.sum()
+                    ).assign_attrs(dset[x].attrs)
+                    _dset["ice_area"] = (
+                        ice_area.sum(("yT", "xT")) * 1.0e-12
+                    ).assign_attrs(ice_area_attrs)
+                    _dset["extent"] = (extent.sum(("yT", "xT")) * 1.0e-12).assign_attrs(
+                        extent_attrs
+                    )
+                elif tuple(_dset[x].dims)[-3::] == ("time", "yt", "xt"):
+                    _dset[x] = (
+                        (_dset[x] * weights).sum(("yt", "xt")) / weights.sum()
+                    ).assign_attrs(dset[x].attrs)
+                    _dset["ice_area"] = (
+                        ice_area.sum(("yt", "xt")) * 1.0e-12
+                    ).assign_attrs(ice_area_attrs)
+                    _dset["extent"] = (extent.sum(("yt", "xt")) * 1.0e-12).assign_attrs(
+                        extent_attrs
+                    )
                 else:
                     del _dset[x]
 
-
-
             _dset_max = _dset.max(("time"))
-            newvars = dict([(x,x+"_max") for x in list(_dset_max.variables)])
+            newvars = dict([(x, x + "_max") for x in list(_dset_max.variables)])
             _dset_max = _dset_max.rename(newvars)
 
             _dset_min = _dset.min(("time"))
-            newvars = dict([(x,x+"_min") for x in list(_dset_min.variables)])
+            newvars = dict([(x, x + "_min") for x in list(_dset_min.variables)])
             _dset_min = _dset_min.rename(newvars)
 
             weights = dset.average_DT.astype("float")
-            _dset_weighted = gmeantools.xr_weighted_avg(_dset,weights)
-            newvars = dict([(x,x+"_mean") for x in list(_dset_weighted.variables)])
+            _dset_weighted = gmeantools.xr_weighted_avg(_dset, weights)
+            newvars = dict([(x, x + "_mean") for x in list(_dset_weighted.variables)])
             _dset_weighted = _dset_weighted.rename(newvars)
-            gmeantools.xr_to_db(_dset_weighted,fyear,f"{fyear}.{region}AveIce.db")
-            gmeantools.xr_to_db(_dset_max,fyear,f"{fyear}.{region}AveIce.db")
-            gmeantools.xr_to_db(_dset_min,fyear,f"{fyear}.{region}AveIce.db")
-    
+            gmeantools.xr_to_db(_dset_weighted, fyear, f"{fyear}.{region}AveIce.db")
+            gmeantools.xr_to_db(_dset_max, fyear, f"{fyear}.{region}AveIce.db")
+            gmeantools.xr_to_db(_dset_min, fyear, f"{fyear}.{region}AveIce.db")
+
+
 def average(grid_file, data_file, fyear, out, lab):
     """Mid-level averaging routine
 

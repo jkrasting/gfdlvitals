@@ -33,8 +33,8 @@ def xr_average(fyear, tar, modules):
 
         # Calculate cell depth
         depth = dset["zhalf_soil"].data
-        depth = [depth[x]-depth[x-1] for x in range(1,len(depth))]
-        dset["depth"] = xr.DataArray(depth,dims=("zfull_soil"))
+        depth = [depth[x] - depth[x - 1] for x in range(1, len(depth))]
+        dset["depth"] = xr.DataArray(depth, dims=("zfull_soil"))
         depth = dset["depth"]
 
         # Retain only time-dependent variables
@@ -94,20 +94,37 @@ def xr_average(fyear, tar, modules):
             _area = ds_grid[_measure]
 
             for region in ["global", "nh", "sh", "tropics"]:
-                _masked_area = gmeantools.xr_mask_by_latitude(_area,ds_grid.geolat_t,region=region)
-                gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db",_measure,fyear,_masked_area.sum().data)
+                _masked_area = gmeantools.xr_mask_by_latitude(
+                    _area, ds_grid.geolat_t, region=region
+                )
+                gmeantools.write_sqlite_data(
+                    f"{fyear}.{region}Ave{modules[member]}.db",
+                    _measure,
+                    fyear,
+                    _masked_area.sum().data,
+                )
 
-                #_masked_area = _masked_area.fillna(0)
+                # _masked_area = _masked_area.fillna(0)
 
                 weights = dset.average_DT.astype("float") * _masked_area
                 if _measure == "soil_area":
                     area_x_depth = _masked_area * depth
-                    gmeantools.write_sqlite_data(f"{fyear}.{region}Ave{modules[member]}.db","soil_volume",fyear,area_x_depth.sum().data)
-                    weights = [weights,(weights*depth).transpose("tile", "time", "zfull_soil", "grid_yt", "grid_xt")]
+                    gmeantools.write_sqlite_data(
+                        f"{fyear}.{region}Ave{modules[member]}.db",
+                        "soil_volume",
+                        fyear,
+                        area_x_depth.sum().data,
+                    )
+                    weights = [
+                        weights,
+                        (weights * depth).transpose(
+                            "tile", "time", "zfull_soil", "grid_yt", "grid_xt"
+                        ),
+                    ]
                     for x in list(_dset.variables):
                         if "zfull_soil" in list(_dset[x].dims):
                             _dset[x].attrs["measure"] = "soil_volume"
-                   
+
                 _dset_weighted = gmeantools.xr_weighted_avg(_dset, weights)
 
                 gmeantools.xr_to_db(

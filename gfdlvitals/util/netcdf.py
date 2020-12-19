@@ -72,7 +72,7 @@ def in_mem_xr(data):
         In-memory xarray dataset object
     """
 
-    return xr.open_dataset(data,use_cftime=True)
+    return xr.open_dataset(data, use_cftime=True)
 
 
 def tar_member_exists(tar, member):
