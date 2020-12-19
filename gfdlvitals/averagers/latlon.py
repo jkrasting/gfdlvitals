@@ -1,23 +1,29 @@
 """Averaging utilities for lat-lon data"""
 
-import multiprocessing
-
-from functools import partial
 
 import numpy as np
-
-from gfdlvitals.util.average import RichVariable
-from gfdlvitals.util.average import process_var
+import xarray as xr
 
 import gfdlvitals.util.gmeantools as gmeantools
 import gfdlvitals.util.netcdf as netcdf
 
-import xarray as xr
 
-__all__ = ["average", "xr_average"]
+__all__ = ["xr_average"]
 
 
 def xr_average(fyear, tar, modules):
+    """xarray-based processing routines for lat-lon model output
+
+    Parameters
+    ----------
+    fyear : str
+        Year being processed (YYYY)
+    tar : tarfile
+        In-memory tarfile object
+    modules : dict
+        Mappings of netCDF file names inside the tar file to output db file names
+    """
+
     members = [x for x in modules if netcdf.tar_member_exists(tar, f"{fyear}.{x}.nc")]
 
     for member in members:
@@ -55,44 +61,3 @@ def xr_average(fyear, tar, modules):
             gmeantools.xr_to_db(
                 _dset_weighted, fyear, f"{fyear}.{region}Ave{modules[member]}.db"
             )
-
-
-def average(grid_file, data_file, fyear, out, lab):
-    """Mid-level averaging routine
-
-    Parameters
-    ----------
-    grid_file : bytes-like
-        Gridspec dataset
-    data_file : bytes-like
-        Model output dataset
-    fyear : str
-        Year being processed
-    out : str
-        Output path directory
-    lab : [type]
-        DB file name
-    """
-
-    _grid_file = netcdf.in_mem_nc(grid_file)
-    _data_file = netcdf.in_mem_nc(data_file)
-
-    lat = _grid_file.variables["lat"][:]
-    lon = _grid_file.variables["lon"][:]
-
-    geolat = np.tile(lat[:, None], (1, lon.shape[0]))
-    geolon = np.tile(lon[None, :], (lat.shape[0], 1))
-    cell_area = gmeantools.standard_grid_cell_area(lat, lon)
-
-    variables = list(_data_file.variables.keys())
-    variables = [
-        RichVariable(
-            x, grid_file, data_file, fyear, out, lab, geolat, geolon, cell_area
-        )
-        for x in variables
-    ]
-
-    _ = [x.close for x in [_grid_file, _data_file]]
-
-    pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    pool.map(partial(process_var, **{"averager": "lat-lon"}), variables)
