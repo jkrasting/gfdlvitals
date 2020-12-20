@@ -1,11 +1,7 @@
+""" Driver for CM4 class models """
+
 import os
 import tarfile
-
-import numpy as np
-
-import xarray as xr
-
-import gfdlvitals as gv
 
 from gfdlvitals import averagers
 from gfdlvitals import diags
@@ -13,22 +9,25 @@ from gfdlvitals.util import extract_ocean_scalar
 from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.netcdf import tar_member_exists
 
-from gfdlvitals.util.average import generic_cubesphere_driver
-from gfdlvitals.util.average import generic_driver
-
 import gfdlvitals.util.netcdf as nctools
+
 
 __all__ = ["routines"]
 
-import gfdlvitals.util.gmeantools as gmeantools
-import gfdlvitals.util.netcdf as netcdf
-
 
 def routines(args, infile):
+    """Driver routine for CM4-class models
+
+    Parameters
+    ----------
+    args : argparse.parser
+        Parsed commmand line arguments
+    infile : str, pathlike
+        History tar file path
+    """
 
     # -- Open the tarfile
     tar = tarfile.open(infile)
-    members = tar.getnames()
 
     # -- Set the model year string
     fyear = str(infile.split("/")[-1].split(".")[0])
@@ -81,9 +80,9 @@ def routines(args, infile):
         topog = extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
         fname = f"{fyear}.ocean_annual_z.nc"
         if tar_member_exists(tar, fname):
-            vhFile = extract_from_tar(tar, fname, ncfile=True)
-            diags.amoc.MOM6(vhFile, ocean_hgrid, topog, fyear, "./", "Ocean")
-        _ = [x.close() for x in [ocean_hgrid, topog, vhFile, gs_tar]]
+            vh_file = extract_from_tar(tar, fname, ncfile=True)
+            diags.amoc.mom6(vh_file, ocean_hgrid, topog, fyear, "./", "Ocean")
+        _ = [x.close() for x in [ocean_hgrid, topog, vh_file, gs_tar]]
 
     # -- Close out the tarfile handle
     tar.close()
@@ -95,5 +94,5 @@ def routines(args, infile):
         label = "Timing"
         if os.path.exists(infile):
             diags.fms.timing(infile, fyear, "./", label)
-    except:
+    except RuntimeError:
         pass

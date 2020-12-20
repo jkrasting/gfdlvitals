@@ -5,7 +5,7 @@ import xarray as xr
 from gfdlvitals.util.gmeantools import write_sqlite_data
 from gfdlvitals.util.gmeantools import write_metadata
 
-__all__ = ["xr_average", "xr_mask_by_latitude", "xr_to_db", "xr_weighted_avg"]
+__all__ = ["xr_mask_by_latitude", "xr_to_db", "xr_weighted_avg"]
 
 
 def xr_mask_by_latitude(arr, geolat, region=None):

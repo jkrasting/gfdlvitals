@@ -4,7 +4,6 @@ import pickle
 import sqlite3
 
 import numpy as np
-import xarray as xr
 import pkg_resources as pkgr
 
 __all__ = [

@@ -1,6 +1,6 @@
-from . import ESM2
-from . import ESM4
-from . import OM4
-from . import generic
+"""Model class drivers"""
 
-__all__ = ['generic', 'ESM2','ESM4','OM4']
+from . import CM4
+from . import ESM2
+
+__all__ = ["CM4", "ESM2"]

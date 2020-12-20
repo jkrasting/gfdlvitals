@@ -1,46 +1,80 @@
 #!/usr/bin/env python3
 
+""" Command Line Script for running gfdlvitals """
+
 import argparse
-import gfdlvitals
 import glob
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
+import gfdlvitals
+
 
 def arguments():
-    '''
+    """
     Function to capture the user-specified command line options
-    '''
-    description = '''
+    """
+    description = """
     Program for generating global mean statistics directly 
     from history tarfile.
 
     For help, contact John.Krasting@noaa.gov
 
-    '''
+    """
 
-    parser = argparse.ArgumentParser(description=description, 
-                 formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=description, formatter_class=argparse.RawTextHelpFormatter
+    )
 
-    parser.add_argument('historydir', metavar='HISTORY DIR', type=str,
-        default=os.getcwd(), help='Path to /history directory')
+    parser.add_argument(
+        "historydir",
+        metavar="HISTORY DIR",
+        type=str,
+        default=os.getcwd(),
+        help="Path to /history directory",
+    )
 
-    parser.add_argument('-o', '--outdir', type=str, default='./',
-        help='Output directory. Default is current directory')
+    parser.add_argument(
+        "-o",
+        "--outdir",
+        type=str,
+        default="./",
+        help="Output directory. Default is current directory",
+    )
 
-    parser.add_argument('-m', '--modelclass', type=str, default='generic',
-        help='Model class. Options include generic, ESM2, ESM4, and OM4. Default is generic')
+    parser.add_argument(
+        "-m",
+        "--modelclass",
+        type=str,
+        default="CM4",
+        help="Model class. Options include CM4 and  ESM2. Default is CM4",
+    )
 
-    parser.add_argument('-s', '--startyear', type=int, default=None,
-        help='Starting year to process. Default is all years.')
+    parser.add_argument(
+        "-s",
+        "--startyear",
+        type=int,
+        default=None,
+        help="Starting year to process. Default is all years.",
+    )
 
-    parser.add_argument('-e', '--endyear', type=int, default=None,
-        help='Ending year to process. Default is all years.')
+    parser.add_argument(
+        "-e",
+        "--endyear",
+        type=int,
+        default=None,
+        help="Ending year to process. Default is all years.",
+    )
 
-    parser.add_argument('-g', '--gridspec', type=str, default=None,
-        help='Path to gridspec tarfile. Used in AMOC calculation. '+
-             'Default is None')
+    parser.add_argument(
+        "-g",
+        "--gridspec",
+        type=str,
+        default=None,
+        help="Path to gridspec tarfile. Used in AMOC calculation. " + "Default is None",
+    )
 
     args = parser.parse_args()
     args.historydir = os.path.abspath(args.historydir)
@@ -50,86 +84,112 @@ def arguments():
     return args
 
 
+def process_year(args, infile):
+    """Function to process a single year
 
-def process_year(args,infile):
-    #-- Set the model year string
-    fyear = str(infile.split('/')[-1].split('.')[0])
+    Parameters
+    ----------
+    args : argparse.parser
+        Parsed commmand line arguments
+    infile : str, pathlike
+        History tar file path
+    """
 
-    #-- Run the main code
-    if args.modelclass == 'ESM2':
-        gfdlvitals.models.ESM2.routines(args,infile)
-    elif args.modelclass == 'ESM4':
-        gfdlvitals.models.ESM4.routines(args,infile)
-    elif args.modelclass == 'OM4':
-        gfdlvitals.models.OM4.routines(args,infile)
-    elif args.modelclass == 'generic':
-        gfdlvitals.models.generic.routines(args,infile)
+    # -- Set the model year string
+    fyear = str(infile.split("/")[-1].split(".")[0])
 
-    #-- Move results to their final location 
+    # -- Run the main code
+    if args.modelclass == "ESM2":
+        gfdlvitals.models.ESM2.routines(infile)
+    elif args.modelclass == "CM4":
+        gfdlvitals.models.CM4.routines(args, infile)
+
+    # -- Move results to their final location
     if not os.path.exists(args.outdir):
-      os.makedirs(args.outdir)
-    for reg in ['global','nh','sh','tropics']:
-      for component in ['Land','Atmos','AtmosAer','AeroCMIP','Ocean','Ice','TOPAZ','COBALT','BLING','OBGC','Timing']:
-        if os.path.exists(fyear+'.'+reg+'Ave'+component+'.db'):
-          if not os.path.exists(args.outdir+'/'+reg+'Ave'+component+'.db'):
-            shutil.copyfile(fyear+'.'+reg+'Ave'+component+'.db',args.outdir+\
-                '/'+reg+'Ave'+component+'.db')
-          else:
-            gfdlvitals.util.merge.merge(fyear+'.'+reg+'Ave'+component+'.db',
-                args.outdir+'/'+reg+'Ave'+component+'.db')
+        os.makedirs(args.outdir)
+    for reg in ["global", "nh", "sh", "tropics"]:
+        for component in [
+            "Land",
+            "Atmos",
+            "AtmosAer",
+            "AeroCMIP",
+            "Ocean",
+            "Ice",
+            "TOPAZ",
+            "COBALT",
+            "BLING",
+            "OBGC",
+            "Timing",
+        ]:
+            if os.path.exists(fyear + "." + reg + "Ave" + component + ".db"):
+                if not os.path.exists(
+                    args.outdir + "/" + reg + "Ave" + component + ".db"
+                ):
+                    shutil.copyfile(
+                        fyear + "." + reg + "Ave" + component + ".db",
+                        args.outdir + "/" + reg + "Ave" + component + ".db",
+                    )
+                else:
+                    gfdlvitals.util.merge.merge(
+                        fyear + "." + reg + "Ave" + component + ".db",
+                        args.outdir + "/" + reg + "Ave" + component + ".db",
+                    )
 
 
+if __name__ == "__main__":
+    cliargs = arguments()
 
-if __name__ == '__main__':
-    args = arguments()
-
-    #-- Obtain git commit hash for provenance
+    # -- Obtain git commit hash for provenance
     script_dir = os.path.dirname(os.path.abspath(__file__))
     commit = gfdlvitals.util.git.retrieve_commit(script_dir)
     clean = gfdlvitals.util.git.is_clean(script_dir)
     if clean is True:
-        args.commit = commit
+        cliargs.commit = commit
     else:
-        args.commit = None
-    print('Using gfdlvitals version '+gfdlvitals.__version__+
-          ' -- git version ' +str(args.commit))
+        cliargs.commit = None
+    print(
+        "Using gfdlvitals version "
+        + gfdlvitals.__version__
+        + " -- git version "
+        + str(cliargs.commit)
+    )
 
-    args.outdir = os.path.abspath(args.outdir)
+    cliargs.outdir = os.path.abspath(cliargs.outdir)
 
-    #-- Get a list of history files
-    dirlist = sorted(glob.glob(args.historydir+"/*.tar"))
+    # -- Get a list of history files
+    dirlist = sorted(glob.glob(cliargs.historydir + "/*.tar"))
 
-    #-- Apply start and end year limits, if applicable
+    # -- Apply start and end year limits, if applicable
     infiles = []
-    if (args.startyear is not None) or (args.endyear is not None):
-        if args.startyear is None:
-            args.startyear = -1
-        if args.endyear is None:
-            args.endyear = 99999
+    if (cliargs.startyear is not None) or (cliargs.endyear is not None):
+        if cliargs.startyear is None:
+            cliargs.startyear = -1
+        if cliargs.endyear is None:
+            cliargs.endyear = 99999
         for f in dirlist:
             yr = int(os.path.basename(f)[0:4])
-            if (yr >= args.startyear) and (yr <= args.endyear):
+            if cliargs.startyear <= yr <= cliargs.endyear:
                 infiles.append(f)
     else:
         infiles = dirlist
 
-    #-- DMGET the history files
-    if shutil.which('dmget') is not None:
-        print('Dmgetting files ...')
-        subprocess.call(['dmget']+infiles)
-        print('Complete!')
+    # -- DMGET the history files
+    if shutil.which("dmget") is not None:
+        print("Dmgetting files ...")
+        subprocess.call(["dmget"] + infiles)
+        print("Complete!")
 
-    #-- Make temporary directory to work in 
+    # -- Make temporary directory to work in
     cwd = os.getcwd()
     tempdir = tempfile.mkdtemp()
     os.chdir(tempdir)
 
-    #-- Loop over history files
-    for infile in infiles:
-        process_year(args,infile)
-    
-    #-- Clean up 
+    # -- Loop over history files
+    for _infile in infiles:
+        process_year(cliargs, _infile)
+
+    # -- Clean up
     os.chdir(cwd)
     shutil.rmtree(tempdir)
 
-    exit()
+    sys.exit()

@@ -202,7 +202,8 @@ def plot_timeseries(
 
             axes_dict[label]["units_label"] = _ax.set_ylabel(dset[var].attrs["units"])
 
-    axes_list = list(set([axes_dict[x]["axis"] for x in list(axes_dict.keys())]))
+    axes_list = [axes_dict[x]["axis"] for x in list(axes_dict.keys())]
+    axes_list = list(set(axes_list))
     maxlim = max([x.get_xlim()[1] - x.get_xlim()[0] for x in axes_list])
     _ = [x.set_xlim(x.get_xlim()[0], x.get_xlim()[0] + maxlim) for x in axes_list]
 

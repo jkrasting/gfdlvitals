@@ -20,7 +20,7 @@ test_data:
 	rm -fR test_data/ascii
 
 $(ESM4_OBJECTS): test_data
-	gfdlvitals -m ESM4 -g test_data/esm4/gridspec.tar -o db-esm4 test_data/esm4/history
+	gfdlvitals -m CM4 -g test_data/esm4/gridspec.tar -o db-esm4 test_data/esm4/history
 
 $(ESM2_OBJECTS): test_data
 	gfdlvitals -m ESM2 -o db-esm2 test_data/esm2g/history

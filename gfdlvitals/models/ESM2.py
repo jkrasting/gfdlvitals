@@ -1,24 +1,26 @@
+""" Driver for ESM2 class models """
+
 import tarfile
-from gfdlvitals import averagers
-from gfdlvitals.util.netcdf import extract_from_tar
 
 from gfdlvitals import averagers
-from gfdlvitals import diags
-from gfdlvitals.util import extract_ocean_scalar
-from gfdlvitals.util.netcdf import extract_from_tar
-from gfdlvitals.util.netcdf import tar_member_exists
-
 from gfdlvitals.util.average import generic_driver
 
-import gfdlvitals.util.netcdf as nctools
 
 __all__ = ["routines"]
 
 
-def routines(args, infile):
+def routines(infile):
+    """Driver routine for ESM2-class models
+
+    Parameters
+    ----------
+    infile : str, pathlike
+        History tar file path
+    """
+
     # -- Open the tarfile
     tar = tarfile.open(infile)
-    members = tar.getnames()
+
     # -- Set the model year string
     fyear = str(infile.split("/")[-1].split(".")[0])
     print("Processing " + fyear)
