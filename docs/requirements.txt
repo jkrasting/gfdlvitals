@@ -10,4 +10,4 @@ cftime<=1.2.1
 nc-time-axis<=1.2.0
 jupyter
 ipython
--e git://github.com/jkrasting/gfdlvitals.git
+-e git://github.com/jkrasting/gfdlvitals.git#egg=gfdlvitals
