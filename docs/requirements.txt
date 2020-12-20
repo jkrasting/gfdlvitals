@@ -8,3 +8,6 @@ matplotlib>=3.3.3
 xarray
 cftime<=1.2.1
 nc-time-axis<=1.2.0
+jupyter
+ipython
+-e git://github.com/jkrasting/gfdlvitals.git
