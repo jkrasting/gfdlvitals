@@ -1,0 +1,10 @@
+python-dev
+setuptools>=41.2
+numpy
+scipy
+pandas
+netCDF4 
+matplotlib>=3.3.3
+xarray
+cftime<=1.2.1
+nc-time-axis<=1.2.0
