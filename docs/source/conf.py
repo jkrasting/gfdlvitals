@@ -61,3 +61,4 @@ html_show_copyright = False
 
 #-- Add logo
 html_logo = "_static/gfdlvitals-logo.png"
+

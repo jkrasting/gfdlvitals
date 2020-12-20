@@ -41,14 +41,14 @@ Documentation
 
 **Help & reference**
 
-* :doc:`modules`
+* :doc:`api`
 
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: Help & reference
 
-   modules
+   api
 
 # Add howto and contributor docs
 
