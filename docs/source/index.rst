@@ -11,6 +11,7 @@ Documentation
 
 * :doc:`overview`
 * :doc:`install`
+* :doc:`virtualenv`
 * :doc:`testing`
 
 .. toctree::
@@ -20,6 +21,7 @@ Documentation
 
    overview
    install
+   virtualenv
    testing
 
 **User Guide**

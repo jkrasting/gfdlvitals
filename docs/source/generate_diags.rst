@@ -31,7 +31,7 @@ in your path if the installation was successful.  The usage of the tool is:
         [-e ENDYEAR] [-g GRIDSPEC] HISTORY DIR
 
 * -o, outdir: the directory where the SQLite files are written. Default is current directory
-* -m, modelclass: Options include `generic`, `ESM2`, `ESM4`, `CM4`, and `OM4`. Default is generic
+* -m, modelclass: Options include `ESM2`, `CM4`. Default is CM4
 * -s, startyear: Starting year to process. Default is all years.
 * -e, endyear: Ending year to process. Default is all years.
 * -g, gridspec: Path to gridspec tarfile. Used in AMOC calculation. Default is None
