@@ -64,3 +64,7 @@ html_logo = "_static/gfdlvitals-logo.png"
 
 #-- Master document
 master_doc = 'index'
+
+#-- Build api
+from sphinx.ext.apidoc import main
+main(['-f', '-M', '-e', '-T', '../../gfdlvitals', '-o', 'api' ])
