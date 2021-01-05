@@ -9,8 +9,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
 
-__all__ = ["set_font", "plot_timeseries", "update_figure"]
+import gfdlvitals
 
+__all__ = ["set_font", "plot_timeseries", "update_figure", "on_key", "run_plotdb"]
+
+COUNT = 1
 
 def set_font():
     """Sets font style to Roboto"""
@@ -279,3 +282,94 @@ def update_figure(fig, axes_dict, varname, smooth, nyears, trend):
     fig.canvas.draw()
 
     return fig
+
+
+def on_key(event, fig, varlist, axes_dict, smooth, nyears, trend):
+    """Update plot on keypress of left and right arrow keys
+
+    Parameters
+    ----------
+    event : mpl keyboard event
+        Key press
+    fig : matplotlib.pyplot.figure
+        Matplotlib figure handle
+    varlist : list
+        List of variables to plot
+    axes_dict : dict
+        Internal structure of axes associations to the data
+    smooth : int, None type
+        Integer number of years to apply as a smoother
+    nyears : int, None type
+        Integer number to years to limit the plotting
+    trend : bool
+        Add linear trend lines if True, omit if False
+    """
+    global COUNT
+
+    redraw = False
+
+    if (event.key == "right") or (event.key == "left"):
+        COUNT = (COUNT + 1) if event.key == "right" else (COUNT - 1)
+        COUNT = 0 if COUNT < 0 else COUNT
+        COUNT = len(varlist) - 1 if COUNT >= len(varlist) else COUNT
+        varname = varlist[COUNT]
+        redraw = True
+
+    if redraw is True:
+        _ = gfdlvitals.plot.update_figure(
+            fig, axes_dict, varname, smooth, nyears, trend
+        )
+
+
+def run_plotdb(cliargs):
+    dsets = [gfdlvitals.open_db(x) for x in cliargs.dbfiles]
+
+    all_variables = [set(x.columns) for x in dsets]
+    common_variables = set.intersection(*all_variables)
+
+    extra_variables = [sorted(list(x - common_variables)) for x in all_variables]
+
+    for x, _varlist in enumerate(extra_variables):
+        if len(_varlist) > 0:
+            print(
+                "The following variables are availble only "
+                + f"{cliargs.dbfiles[x]} and will not be plotted:\n"
+            )
+
+            if len(_varlist) % 2 != 0:
+                _varlist.append(" ")
+
+            split = int(len(_varlist) / 2)
+            _list1 = _varlist[0:split]
+            _list2 = _varlist[split:]
+            for key, value in zip(_list1, _list2):
+                print("{0:<20s} {1}".format(key, value))
+            print("\n")
+
+    variable_list = sorted(list(common_variables))
+
+    mplfig, axes = gfdlvitals.plot.plot_timeseries(
+        dsets,
+        variable_list[0],
+        trend=cliargs.trend,
+        align_times=cliargs.align,
+        smooth=cliargs.smooth,
+        nyears=cliargs.nyears,
+        labels=cliargs.labels,
+    )
+    cid = mplfig.canvas.mpl_connect(
+        "key_press_event",
+        lambda event: on_key(
+            event,
+            mplfig,
+            variable_list,
+            axes,
+            cliargs.smooth,
+            cliargs.nyears,
+            cliargs.trend,
+        ),
+    )
+
+    plt.tight_layout()
+    plt.show(block=True)
+
