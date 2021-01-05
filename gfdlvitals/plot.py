@@ -15,6 +15,7 @@ __all__ = ["set_font", "plot_timeseries", "update_figure", "on_key", "run_plotdb
 
 COUNT = 1
 
+
 def set_font():
     """Sets font style to Roboto"""
     # Add Roboto font
@@ -322,6 +323,13 @@ def on_key(event, fig, varlist, axes_dict, smooth, nyears, trend):
 
 
 def run_plotdb(cliargs):
+    """Intermediate function to execute plotting routines
+
+    Parameters
+    ----------
+    cliargs : argparse.arguments
+        Processed command-line arguments
+    """
     dsets = [gfdlvitals.open_db(x) for x in cliargs.dbfiles]
 
     all_variables = [set(x.columns) for x in dsets]
@@ -357,7 +365,7 @@ def run_plotdb(cliargs):
         nyears=cliargs.nyears,
         labels=cliargs.labels,
     )
-    cid = mplfig.canvas.mpl_connect(
+    _ = mplfig.canvas.mpl_connect(
         "key_press_event",
         lambda event: on_key(
             event,
@@ -372,4 +380,3 @@ def run_plotdb(cliargs):
 
     plt.tight_layout()
     plt.show(block=True)
-
