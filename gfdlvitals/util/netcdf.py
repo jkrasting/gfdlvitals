@@ -30,7 +30,7 @@ def extract_from_tar(tar, member, ncfile=False):
     if member not in _tar.getnames():
         member = "./" + member
 
-    data = _tar.extractfile(member).read()
+    data = _tar.extractfile(member)
 
     if ncfile:
         data = in_mem_nc(data)
@@ -55,6 +55,7 @@ def in_mem_nc(data):
         In-memory netCDF4 dataset object
     """
 
+    data = data.read()
     return netCDF4.Dataset("in-mem-file", mode="r", memory=data)
 
 
