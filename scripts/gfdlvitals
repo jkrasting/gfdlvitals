@@ -139,21 +139,6 @@ def process_year(args, infile):
 if __name__ == "__main__":
     cliargs = arguments()
 
-    # -- Obtain git commit hash for provenance
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    commit = gfdlvitals.util.git.retrieve_commit(script_dir)
-    clean = gfdlvitals.util.git.is_clean(script_dir)
-    if clean is True:
-        cliargs.commit = commit
-    else:
-        cliargs.commit = None
-    print(
-        "Using gfdlvitals version "
-        + gfdlvitals.__version__
-        + " -- git version "
-        + str(cliargs.commit)
-    )
-
     cliargs.outdir = os.path.abspath(cliargs.outdir)
 
     # -- Get a list of history files
