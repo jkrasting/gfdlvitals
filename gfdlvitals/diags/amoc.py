@@ -46,6 +46,8 @@ def mom6(vh_file, f_ocean_hgrid, f_topog, fyear, outdir, label):
 
     # -- Compute psi
     psi = m6toolbox.MOCpsi(vh_field, vmsk=atlmask)
+    # check if output is symmetric (kludge!)
+    yq_coord = yq_coord[1:] if (yq_coord.shape[0] == psi.shape[-1] + 1) else yq_coord
     maxsfn = np.max(
         psi[np.logical_and(zt_coord > 500, zt_coord < 2500)][
             :, np.greater_equal(yq_coord, 20)

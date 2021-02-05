@@ -228,6 +228,9 @@ def maskFromDepth(depth, zCellTop):
 
 def MOCpsi(vh, vmsk=None):
     """Sums 'vh' zonally and cumulatively in the vertical to yield an overturning stream function, psi(y,z)."""
+    # remove first latitude row is output is symmetric (kludge!!)
+    if vmsk is not None:
+        vh = vh[:, 1:] if (vmsk.shape[-2] + 1 == vh.shape[-2]) else vh
     shape = list(vh.shape)
     shape[-3] += 1
     psi = np.zeros(shape[:-1])

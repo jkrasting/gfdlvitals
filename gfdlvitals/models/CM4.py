@@ -76,13 +76,32 @@ def routines(args, infile):
     # -- AMOC
     if args.gridspec is not None:
         gs_tar = tarfile.open(args.gridspec)
-        ocean_hgrid = extract_from_tar(gs_tar, "ocean_hgrid.nc", ncfile=True)
-        topog = extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
-        fname = f"{fyear}.ocean_annual_z.nc"
-        if tar_member_exists(tar, fname):
-            vh_file = extract_from_tar(tar, fname, ncfile=True)
-            diags.amoc.mom6(vh_file, ocean_hgrid, topog, fyear, "./", "Ocean")
-        _ = [x.close() for x in [ocean_hgrid, topog, vh_file, gs_tar]]
+
+        # Extract ocean hgrid
+        ocean_hgrid = (
+            extract_from_tar(gs_tar, "ocean_hgrid.nc", ncfile=True)
+            if tar_member_exists(gs_tar, "ocean_hgrid.nc")
+            else None
+        )
+
+        # Extract topog.nc or ocean_topog.nc, in order of preference
+        topog = (
+            extract_from_tar(gs_tar, "topog.nc", ncfile=True)
+            if tar_member_exists(gs_tar, "topog.nc")
+            else None
+        )
+        topog = (
+            extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
+            if tar_member_exists(gs_tar, "ocean_topog.nc")
+            else topog
+        )
+
+        if ocean_hgrid is not None and topog is not None:
+            fname = f"{fyear}.ocean_annual_z.nc"
+            if tar_member_exists(tar, fname):
+                vh_file = extract_from_tar(tar, fname, ncfile=True)
+                diags.amoc.mom6(vh_file, ocean_hgrid, topog, fyear, "./", "Ocean")
+            _ = [x.close() for x in [ocean_hgrid, topog, vh_file, gs_tar]]
 
     # -- Close out the tarfile handle
     tar.close()
