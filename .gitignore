@@ -9,3 +9,10 @@ testing/db-esm4
 testing/results
 docs/build
 .vscode
+.ipynb_checkpoints/
+Untitled.ipynb
+build/
+dist/
+docs/source/api/
+docs/source/savefig/
+testdir/
