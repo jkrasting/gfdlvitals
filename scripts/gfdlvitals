@@ -53,6 +53,15 @@ def arguments():
     )
 
     parser.add_argument(
+        "-c",
+        "--component",
+        type=str,
+        default="all",
+        help="Comma-separated list of components to process. "
+        + "See documentation for full list. Default is all.",
+    )
+
+    parser.add_argument(
         "-s",
         "--startyear",
         type=int,
@@ -100,7 +109,7 @@ def process_year(args, infile):
 
     # -- Run the main code
     if args.modelclass == "ESM2":
-        gfdlvitals.models.ESM2.routines(infile)
+        gfdlvitals.models.ESM2.routines(args, infile)
     elif args.modelclass == "CM4":
         gfdlvitals.models.CM4.routines(args, infile)
 
@@ -168,6 +177,9 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     tempdir = tempfile.mkdtemp()
     os.chdir(tempdir)
+
+    # -- Split list of components to process
+    cliargs.component = cliargs.component.split(",")
 
     # -- Loop over history files
     for _infile in infiles:

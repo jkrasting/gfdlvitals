@@ -6,7 +6,6 @@ import tarfile
 from gfdlvitals import averagers
 from gfdlvitals import diags
 from gfdlvitals.util import extract_ocean_scalar
-from gfdlvitals.util.netcdf import extract_from_tar
 from gfdlvitals.util.netcdf import tar_member_exists
 
 import gfdlvitals.util.netcdf as nctools
@@ -33,6 +32,9 @@ def routines(args, infile):
     fyear = str(infile.split("/")[-1].split(".")[0])
     print("Processing " + fyear)
 
+    # -- Get list of components to process
+    comps = args.component
+
     # -- Atmospheric Fields
     modules = {
         "atmos_month": "Atmos",
@@ -40,23 +42,27 @@ def routines(args, infile):
         "atmos_month_aer": "AtmosAer",
         "aerosol_month_cmip": "AeroCMIP",
     }
-    averagers.cubesphere.xr_average(fyear, tar, modules)
+    if any(comp in comps for comp in ["atmos", "all"]):
+        averagers.cubesphere.xr_average(fyear, tar, modules)
 
     # -- Land Fields
     modules = {"land_month": "Land"}
-    averagers.land_lm4.xr_average(fyear, tar, modules)
+    if any(comp in comps for comp in ["land", "all"]):
+        averagers.land_lm4.xr_average(fyear, tar, modules)
 
     # -- Ice
     modules = {"ice_month": "Ice"}
-    averagers.ice.xr_average(fyear, tar, modules)
+    if any(comp in comps for comp in ["ice", "all"]):
+        averagers.ice.xr_average(fyear, tar, modules)
 
     # -- Ocean
     fname = f"{fyear}.ocean_scalar_annual.nc"
-    if tar_member_exists(tar, fname):
-        print(f"{fyear}.ocean_scalar_annual.nc")
-        fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
-        extract_ocean_scalar.mom6(fdata, fyear, "./")
-        fdata.close()
+    if any(comp in comps for comp in ["ocean", "all"]):
+        if tar_member_exists(tar, fname):
+            print(f"{fyear}.ocean_scalar_annual.nc")
+            fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
+            extract_ocean_scalar.mom6(fdata, fyear, "./")
+            fdata.close()
 
     # -- OBGC
     modules = {
@@ -71,37 +77,13 @@ def routines(args, infile):
         "ocean_bling_cmip6_omip_tracers_month_z": "OBGC",
         "ocean_bling_cmip6_omip_tracers_year_z": "OBGC",
     }
-    averagers.tripolar.xr_average(fyear, tar, modules)
+    if any(comp in comps for comp in ["obgc", "all"]):
+        averagers.tripolar.xr_average(fyear, tar, modules)
 
     # -- AMOC
-    if args.gridspec is not None:
+    if any(comp in comps for comp in ["amoc", "all"]) and args.gridspec is not None:
         gs_tar = tarfile.open(args.gridspec)
-
-        # Extract ocean hgrid
-        ocean_hgrid = (
-            extract_from_tar(gs_tar, "ocean_hgrid.nc", ncfile=True)
-            if tar_member_exists(gs_tar, "ocean_hgrid.nc")
-            else None
-        )
-
-        # Extract topog.nc or ocean_topog.nc, in order of preference
-        topog = (
-            extract_from_tar(gs_tar, "topog.nc", ncfile=True)
-            if tar_member_exists(gs_tar, "topog.nc")
-            else None
-        )
-        topog = (
-            extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
-            if tar_member_exists(gs_tar, "ocean_topog.nc")
-            else topog
-        )
-
-        if ocean_hgrid is not None and topog is not None:
-            fname = f"{fyear}.ocean_annual_z.nc"
-            if tar_member_exists(tar, fname):
-                vh_file = extract_from_tar(tar, fname, ncfile=True)
-                diags.amoc.mom6(vh_file, ocean_hgrid, topog, fyear, "./", "Ocean")
-            _ = [x.close() for x in [ocean_hgrid, topog, vh_file, gs_tar]]
+        diags.amoc.mom6(fyear, gs_tar, tar)
 
     # -- Close out the tarfile handle
     tar.close()

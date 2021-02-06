@@ -3,13 +3,55 @@
 import sys
 import numpy as np
 from gfdlvitals.util import gmeantools
+from gfdlvitals.util.netcdf import tar_member_exists
+from gfdlvitals.util.netcdf import extract_from_tar
 from . import m6toolbox
 
 
 __all__ = ["mom6"]
 
 
-def mom6(vh_file, f_ocean_hgrid, f_topog, fyear, outdir, label):
+def mom6(fyear, gs_tar, tar):
+    """Driver for AMOC calculation in MOM6-class models
+
+    Parameters
+    ----------
+    fyear : str
+        Year label (YYYY)
+    gs_tar : tarfile
+        In-memory gridspec tarfile object
+    tar : tarfile
+        In-memory history tarfile object
+    """
+
+    # Extract ocean hgrid
+    ocean_hgrid = (
+        extract_from_tar(gs_tar, "ocean_hgrid.nc", ncfile=True)
+        if tar_member_exists(gs_tar, "ocean_hgrid.nc")
+        else None
+    )
+
+    # Extract topog.nc or ocean_topog.nc, in order of preference
+    topog = (
+        extract_from_tar(gs_tar, "topog.nc", ncfile=True)
+        if tar_member_exists(gs_tar, "topog.nc")
+        else None
+    )
+    topog = (
+        extract_from_tar(gs_tar, "ocean_topog.nc", ncfile=True)
+        if tar_member_exists(gs_tar, "ocean_topog.nc")
+        else topog
+    )
+
+    if ocean_hgrid is not None and topog is not None:
+        fname = f"{fyear}.ocean_annual_z.nc"
+        if tar_member_exists(tar, fname):
+            vh_file = extract_from_tar(tar, fname, ncfile=True)
+            otsfn(vh_file, ocean_hgrid, topog, fyear, "./", "Ocean")
+        _ = [x.close() for x in [ocean_hgrid, topog, vh_file, gs_tar]]
+
+
+def otsfn(vh_file, f_ocean_hgrid, f_topog, fyear, outdir, label):
     """Computes AMOC for MOM6-class models
 
     Parameters

@@ -27,15 +27,19 @@ This package includes a script called ``gfdlvitals`` that should be present
 in your path if the installation was successful.  The usage of the tool is:
 
 .. parsed-literal::
-   gfdlvitals [-h] [-o OUTDIR] [-m MODELCLASS] [-s STARTYEAR] 
-        [-e ENDYEAR] [-g GRIDSPEC] HISTORY DIR
+   gfdlvitals [-h] [-o OUTDIR] [-m MODELCLASS] [-c COMPONENT] 
+        [-s STARTYEAR] [-e ENDYEAR] [-g GRIDSPEC] HISTORY DIR
 
 * -o, outdir: the directory where the SQLite files are written. Default is current directory
 * -m, modelclass: Options include `ESM2`, `CM4`. Default is CM4
+* -c, component: Comma-separated list of components to process. Default is all.
 * -s, startyear: Starting year to process. Default is all years.
 * -e, endyear: Ending year to process. Default is all years.
 * -g, gridspec: Path to gridspec tarfile. Used in AMOC calculation. Default is None
 * historydir: Path to directory that contains the history tar files from the model
+
+When specifying a component or list of components, available options are 
+atmos, ice, land, ocean, obgc, and amoc.
 
 .. note::
    The ``-g`` or ``--gridspec`` option is only required if you wish to calculate
