@@ -22,6 +22,11 @@ and work with the raw data:
 * matplotlib
 * pandas
 
+Atlantic Meridional Overturning Circulation (AMOC) calculation is available for 
+MOM6-class models and requires the following package:
+
+* `xoverturning <https://github.com/raphaeldussin/xoverturning>`_
+
 Obtaining the source code
 -------------------------
 
@@ -75,6 +80,7 @@ in the environment's YAML specification file:
      - numpy
      - pip
      - pip:
+       - git+https://github.com/raphaeldussin/xoverturning
        - git+https://github.com/jkrasting/gfdlvitals.git
 
 Appending ``@<release_name>`` at the end of the URL will install a specific
@@ -84,8 +90,9 @@ Quick installation
 ------------------
 
 If you are interested in skipping the download of the source code, you can install 
-**gfdlvitals** directly from GitHub into the user ``~/.local`` directory in one-line:
+**gfdlvitals** directly from GitHub into the user ``~/.local`` directory:
 
 .. parsed-literal::
+   pip install git+https://github.com/raphaeldussin/xoverturning --user
    pip install git+https://github.com/jkrasting/gfdlvitals.git --user
       

@@ -81,9 +81,8 @@ def routines(args, infile):
         averagers.tripolar.xr_average(fyear, tar, modules)
 
     # -- AMOC
-    if any(comp in comps for comp in ["amoc", "all"]) and args.gridspec is not None:
-        gs_tar = tarfile.open(args.gridspec)
-        diags.amoc.mom6(fyear, gs_tar, tar)
+    if any(comp in comps for comp in ["amoc", "all"]):
+        diags.amoc.mom6_amoc(fyear, tar)
 
     # -- Close out the tarfile handle
     tar.close()
