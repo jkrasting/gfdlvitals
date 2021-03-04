@@ -60,8 +60,9 @@ def mom6_amoc(fyear, tar, label="Ocean", outdir="./"):
             maxsfn = maxsfn.astype(np.float16).values
             print(f"  AMOC = {maxsfn}")
 
-            # 1.5 degree window centered on 26.5N
-            rapidsfn = moc.sel(yh=slice(25.0, 28.0), z_l=slice(500.0, 2500.0)).max()
+            # max streamfunction at 26.5N
+            rapidsfn = moc.sel(yh=26.5, method="nearest")
+            rapidsfn = rapidsfn.sel(z_l=slice(500.0, 2500.0)).max()
             rapidsfn = rapidsfn.astype(np.float16).values
             print(f"  RAPID AMOC = {rapidsfn}")
 
