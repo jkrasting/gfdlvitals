@@ -42,6 +42,32 @@ When specifying a component or list of components, available options are
 atmos, ice, land, ocean, obgc, and amoc.
 
 .. note::
-   The ``-g`` or ``--gridspec`` option is only required if you wish to calculate
-   the magnitude of the Atlantic Meridional Overturning Circulation (AMOC) strength.
-   This feature is not available for the ESM2-class models.
+   The ``-g`` or ``--gridspec`` option is no longer used. AMOC is generated using the
+   ``xoverturtning`` package which relies on grid information contained in the 
+   ``ocean_static.nc`` file.  This option is being retained in the driver, however,
+   since information in the gridspec file might be used to apply angle corrections 
+   to the AMOC transports in the future.
+
+AMOC calculation
+----------------
+The Atlantic Meridional Overturning Circulation (AMOC) is calculated using `xoverturning`. 
+The calculation is available for ocean model version MOM6 or greater. In order to calculate 
+AMOC the following variables are required in the ``ocean_annual_z`` output stream:
+
+* umo
+* vmo
+* geolon
+* geolat
+
+Two AMOC scalars are calculated and added to the ``globalAveOcean.db`` file:
+
+1. **amoc_vh**:  The annual mean maximum overturning streamfunction beteween 20-80N and 500-2500m depth. 
+2. **amoc_rapid**:  The annual mean maximum overturning streamfunction beteween 25-28N (centered on 26.5N) and 500-2500m depth.
+
+.. note::
+   The ``xoverturning`` package has additional options to rotate the transport vectors to true north and to 
+   remove the mixed layer thickness flux (``uhml``/``vhml``). Neither of these options are used 
+   in ``gfdlvitals``.
+
+   The scalars above are the y-ward meridional overturning (i.e. ``msftyyz``) based on the 
+   residual mean freshwater transport, ``vmo``.
