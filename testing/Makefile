@@ -3,18 +3,19 @@ ESM4_DB = globalAveAtmos.db globalAveIce.db globalAveLand.db globalAveOBGC.db gl
           shAveAtmos.db shAveIce.db shAveLand.db shAveOBGC.db \
           tropicsAveAtmos.db tropicsAveLand.db tropicsAveOBGC.db
 
-ESM2_DB = $(ESM4_DB) nhAveOcean.db shAveOcean.db tropicsAveOcean.db 
+ESM2_DB = globalAveAtmos.db globalAveOcean.db nhAveOBGC.db shAveAtmos.db \
+          shAveOcean.db tropicsAveOBGC.db globalAveOBGC.db nhAveAtmos.db \
+		  nhAveOcean.db shAveOBGC.db tropicsAveAtmos.db tropicsAveOcean.db
 
 ESM4_OBJECTS=$(patsubst %, db-esm4/%, $(ESM4_DB))
 ESM2_OBJECTS=$(patsubst %, db-esm2/%, $(ESM2_DB))
-
 
 all: $(ESM4_OBJECTS) $(ESM2_OBJECTS)
 
 esm2: $(ESM2_OBJECTS)
 
 test_data:
-	curl -o gfdlvitals_test_data.tar.gz ftp://ftp.gfdl.noaa.gov/pub/John.Krasting/gfdlvitals/gfdlvitals_test_data.tar.gz
+	curl -o gfdlvitals_test_data.tar.gz https://extranet.gfdl.noaa.gov/~John.Krasting/testing/gfdlvitals_test_data.latest.tar.gz
 	tar -xzvf gfdlvitals_test_data.tar.gz
 	rm -f gfdlvitals_test_data.tar.gz
 	rm -fR test_data/ascii
