@@ -62,7 +62,7 @@ AMOC the following variables are required in the ``ocean_annual_z`` output strea
 Two AMOC scalars are calculated and added to the ``globalAveOcean.db`` file:
 
 1. **amoc_vh**:  The annual mean maximum overturning streamfunction beteween 20-80N and 500-2500m depth. 
-2. **amoc_rapid**:  The annual mean maximum overturning streamfunction beteween 25-28N (centered on 26.5N) and 500-2500m depth.
+2. **amoc_rapid**:  The annual mean maximum overturning streamfunction at 26.5N between 500-2500m depth.
 
 .. note::
    The ``xoverturning`` package has additional options to rotate the transport vectors to true north and to 
