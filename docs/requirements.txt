@@ -1,4 +1,3 @@
-python-dev
 setuptools>=41.2
 numpy
 scipy
