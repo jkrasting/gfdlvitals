@@ -1,6 +1,6 @@
-python-dev
-setuptools>=41.2
 numpy
+python-dev-tools
+setuptools>=41.2
 scipy
 pandas
 netCDF4 
@@ -10,5 +10,6 @@ cftime<=1.2.1
 nc-time-axis<=1.2.0
 jupyter
 ipython
--e git://github.com/jkrasting/gfdlvitals.git#egg=gfdlvitals
+-e git://github.com/jkrasting/cmip_basins.git#egg=cmip_basins
 -e git://github.com/raphaeldussin/xoverturning.git#egg=xoverturning
+-e git://github.com/jkrasting/gfdlvitals.git#egg=gfdlvitals
