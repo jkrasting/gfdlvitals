@@ -6,10 +6,7 @@ channels:
   - defaults
 dependencies:
      - python=3.8
-     - cartopy
      - cftime<=1.2.1
-     - esmf=8.0.0
-     - esmpy=8.0.0
      - ipython
      - jupyter
      - matplotlib>=3.3.3
@@ -22,6 +19,7 @@ dependencies:
      - pip:
        - git+https://github.com/jkrasting/cmip_basins.git
        - git+https://github.com/raphaeldussin/xoverturning
+     - regionmask
      - scipy
      - sphinx
      - sphinx_rtd_theme
