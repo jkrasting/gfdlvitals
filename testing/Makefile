@@ -15,13 +15,13 @@ all: $(ESM4_OBJECTS) $(ESM2_OBJECTS)
 esm2: $(ESM2_OBJECTS)
 
 test_data:
-	curl -o gfdlvitals_test_data.tar.gz https://extranet.gfdl.noaa.gov/~John.Krasting/testing/gfdlvitals_test_data.latest.tar.gz
-	tar -xzvf gfdlvitals_test_data.tar.gz
-	rm -f gfdlvitals_test_data.tar.gz
+	curl -o gfdlvitals_test_data.latest.tar.gz https://extranet.gfdl.noaa.gov/~John.Krasting/testing/gfdlvitals_test_data.latest.tar.gz
+	tar -xzvf gfdlvitals_test_data.latest.tar.gz
+	rm -f gfdlvitals_test_data.latest.tar.gz
 	rm -fR test_data/ascii
 
 $(ESM4_OBJECTS): test_data
-	gfdlvitals -m CM4 -g test_data/esm4/gridspec.tar -o db-esm4 test_data/esm4/history
+	gfdlvitals -m CM4 -o db-esm4 test_data/esm4/history
 
 $(ESM2_OBJECTS): test_data
 	gfdlvitals -m ESM2 -o db-esm2 test_data/esm2g/history
