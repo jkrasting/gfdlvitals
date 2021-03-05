@@ -9,5 +9,3 @@ pandas
 regionmask
 scipy
 xarray
--e git://github.com/jkrasting/cmip_basins.git#egg=cmip_basins
--e git://github.com/raphaeldussin/xoverturning.git#egg=xoverturning

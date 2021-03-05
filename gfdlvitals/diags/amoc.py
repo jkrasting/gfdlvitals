@@ -1,7 +1,10 @@
 """ Routine for calculating AMOC """
 
 import warnings
-import xoverturning
+try:
+    import xoverturning
+except:
+    warnings.warn("Could not load xoverturning.")
 import numpy as np
 from gfdlvitals.util import gmeantools
 from gfdlvitals.util.netcdf import tar_member_exists
