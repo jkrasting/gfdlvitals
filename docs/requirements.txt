@@ -1,15 +1,13 @@
-numpy
-python-dev-tools
-setuptools>=41.2
-scipy
-pandas
-netCDF4 
-matplotlib>=3.3.3
-xarray
 cftime<=1.2.1
-nc-time-axis<=1.2.0
-jupyter
 ipython
+jupyter
+matplotlib>=3.3.3
+nc-time-axis<=1.2.0
+netCDF4 
+numpy
+pandas
+regionmask
+scipy
+xarray
 -e git://github.com/jkrasting/cmip_basins.git#egg=cmip_basins
 -e git://github.com/raphaeldussin/xoverturning.git#egg=xoverturning
--e git://github.com/jkrasting/gfdlvitals.git#egg=gfdlvitals
