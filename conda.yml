@@ -7,15 +7,24 @@ channels:
 dependencies:
      - python=3.8
      - cartopy
+     - cftime<=1.2.1
      - esmf=8.0.0
      - esmpy=8.0.0
-     - matplotlib
+     - ipython
+     - jupyter
+     - matplotlib>=3.3.3
+     - nbsphinx
+     - nc-time-axis<=1.2.0
      - netcdf4
      - numpy
+     - pandas
      - pip
      - pip:
        - git+https://github.com/jkrasting/cmip_basins.git
        - git+https://github.com/raphaeldussin/xoverturning
-       - git+https://github.com/jkrasting/gfdlvitals.git
+     - scipy
+     - sphinx
+     - sphinx_rtd_theme
+     - xarray
      - xesmf=0.4.0
      - xgcm

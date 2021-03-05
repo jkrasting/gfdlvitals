@@ -10,7 +10,5 @@ sphinx:
   configuration: docs/source/conf.py
 
 # Optionally set the version of Python and requirements required to build your docs
-python:
-  version: 3.8
-  install:
-    - requirements: docs/requirements.txt
+conda:
+  environment: conda.yml
