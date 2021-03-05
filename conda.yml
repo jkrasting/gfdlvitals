@@ -1,0 +1,21 @@
+# To install:
+#     conda env create -f conda.yml -n <some name>
+
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+     - python=3.8
+     - cartopy
+     - esmf=8.0.0
+     - esmpy=8.0.0
+     - matplotlib
+     - netcdf4
+     - numpy
+     - pip
+     - pip:
+       - git+https://github.com/jkrasting/cmip_basins.git
+       - git+https://github.com/raphaeldussin/xoverturning
+       - git+https://github.com/jkrasting/gfdlvitals.git
+     - xesmf=0.4.0
+     - xgcm
