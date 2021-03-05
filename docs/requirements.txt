@@ -6,6 +6,5 @@ nc-time-axis<=1.2.0
 netCDF4 
 numpy
 pandas
-regionmask
 scipy
 xarray
