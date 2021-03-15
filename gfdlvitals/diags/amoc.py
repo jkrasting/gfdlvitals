@@ -49,7 +49,7 @@ def mom6_amoc(fyear, tar, label="Ocean", outdir="./"):
         dset_static = in_mem_xr(static_file).isel(time=0)
 
         # merge static DataSet with transport DataSet
-        for geo_coord in ["geolon", "geolat"]:
+        for geo_coord in ["geolon", "geolat", "wet"]:
             if geo_coord in dset_static.variables:
                 dset[geo_coord] = dset_static[geo_coord]
 
