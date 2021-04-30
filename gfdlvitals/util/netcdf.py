@@ -73,7 +73,12 @@ def in_mem_xr(data):
         In-memory xarray dataset object
     """
 
-    return xr.open_dataset(data, use_cftime=True)
+    if isinstance(data, netCDF4._netCDF4.Dataset):
+        dfile = xr.open_dataset(xr.backends.NetCDF4DataStore(data), use_cftime=True)
+    else:
+        dfile = xr.open_dataset(data, use_cftime=True)
+
+    return dfile
 
 
 def tar_member_exists(tar, member):
