@@ -7,6 +7,7 @@ try:
 except:
     warnings.warn("Could not load xoverturning.")
 import numpy as np
+import xarray as xr
 from gfdlvitals.util import gmeantools
 from gfdlvitals.util.netcdf import tar_member_exists
 from gfdlvitals.util.netcdf import extract_from_tar
@@ -56,7 +57,9 @@ def mom6_amoc(fyear, tar, label="Ocean", outdir="./"):
         # merge static DataSet with transport DataSet
         for geo_coord in ["geolon_v", "geolat_v", "wet_v"]:
             if geo_coord in dset_static.variables:
-                dset[geo_coord] = dset_static[geo_coord]
+                dset[geo_coord] = xr.DataArray(
+                    dset_static[geo_coord].values, dims=dset_static[geo_coord].dims
+                )
 
         required_vars = ["geolon_v", "geolat_v", "umo", "vmo"]
         dset_vars = list(dset.variables)
