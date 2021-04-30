@@ -66,7 +66,7 @@ def mom6_amoc(fyear, tar, label="Ocean", outdir="./"):
 
         if list(set(required_vars) - set(dset_vars)) == []:
             # calculate non-rotated y-ward moc array
-            moc = xoverturning.calcmoc(dset, basin="atl-arc")
+            moc = xoverturning.calcmoc(dset, basin="atl-arc", verbose=False)
 
             # max streamfunction between 20N-80N and 500-2500m depth
             maxsfn = moc.sel(yq=slice(20.0, 80.0), z_i=slice(500.0, 2500.0)).max()
