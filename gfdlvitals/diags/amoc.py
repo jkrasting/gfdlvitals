@@ -1,6 +1,7 @@
 """ Routine for calculating AMOC """
 
 import warnings
+
 try:
     import xoverturning
 except:
@@ -34,10 +35,14 @@ def mom6_amoc(fyear, tar, label="Ocean", outdir="./"):
     static = f"{fyear}.ocean_static.nc"
 
     annual_file = (
-        extract_from_tar(tar, member) if tar_member_exists(tar, member) else None
+        extract_from_tar(tar, member, ncfile=True)
+        if tar_member_exists(tar, member)
+        else None
     )
     static_file = (
-        extract_from_tar(tar, static) if tar_member_exists(tar, static) else None
+        extract_from_tar(tar, static, ncfile=True)
+        if tar_member_exists(tar, static)
+        else None
     )
 
     if annual_file is not None and static_file is not None:
@@ -49,11 +54,11 @@ def mom6_amoc(fyear, tar, label="Ocean", outdir="./"):
         dset_static = in_mem_xr(static_file).isel(time=0)
 
         # merge static DataSet with transport DataSet
-        for geo_coord in ["geolon", "geolat", "wet"]:
+        for geo_coord in ["geolon_v", "geolat_v", "wet_v"]:
             if geo_coord in dset_static.variables:
                 dset[geo_coord] = dset_static[geo_coord]
 
-        required_vars = ["geolon", "geolat", "umo", "vmo"]
+        required_vars = ["geolon_v", "geolat_v", "umo", "vmo"]
         dset_vars = list(dset.variables)
 
         if list(set(required_vars) - set(dset_vars)) == []:
@@ -61,13 +66,13 @@ def mom6_amoc(fyear, tar, label="Ocean", outdir="./"):
             moc = xoverturning.calcmoc(dset, basin="atl-arc")
 
             # max streamfunction between 20N-80N and 500-2500m depth
-            maxsfn = moc.sel(yh=slice(20.0, 80.0), z_l=slice(500.0, 2500.0)).max()
+            maxsfn = moc.sel(yq=slice(20.0, 80.0), z_i=slice(500.0, 2500.0)).max()
             maxsfn = maxsfn.astype(np.float16).values
             print(f"  AMOC = {maxsfn}")
 
             # max streamfunction at 26.5N
-            rapidsfn = moc.sel(yh=26.5, method="nearest")
-            rapidsfn = rapidsfn.sel(z_l=slice(500.0, 2500.0)).max()
+            rapidsfn = moc.sel(yq=26.5, method="nearest")
+            rapidsfn = rapidsfn.sel(z_i=slice(500.0, 2500.0)).max()
             rapidsfn = rapidsfn.astype(np.float16).values
             print(f"  RAPID AMOC = {rapidsfn}")
 
