@@ -259,6 +259,10 @@ class VitalsDataFrame(pd.DataFrame):
         # get a list of common variables
         varlist = list(set(self.columns).intersection(df2.columns))
 
+        # ignore some known fields
+        ignore_list = ["area"]
+        varlist = [x for x in varlist if x not in ignore_list]
+
         # perform t-test
         result = {k: ttest_ind_auto(self[k], df2[k])[1] for k in varlist}
 
