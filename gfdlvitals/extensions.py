@@ -9,7 +9,102 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-__all__ = ["VitalsDataFrame", "Timeseries", "open_db", "reformat_time_axis"]
+from scipy import stats
+
+__all__ = [
+    "VitalsDataFrame",
+    "Timeseries",
+    "open_db",
+    "reformat_time_axis",
+    "ttest_ind_auto",
+]
+
+
+def _autocorr(arr, lag=1):
+    """Computes the sample autocorrelation function coeffficient (rho)
+    for given lag
+
+    Parameters
+    ----------
+    arr : numpy.array (1-d)
+        Input data array
+    lag : int, optional
+        lag, by default 1
+
+    Returns
+    -------
+    float
+        lagged auto-correlation
+    """
+
+    flen = float(len(arr))
+    ybar = float(sum(arr)) / flen
+    denom = sum([(y - ybar) ** 2 for y in arr])
+    numer = sum(
+        [(y - ybar) * (ytpk - ybar) for (y, ytpk) in zip(arr[:-lag], arr[lag:])]
+    )
+    return numer / denom
+
+
+def ttest_ind_auto(arr1, arr2, axis=0):
+    """Performs a t-test that adjusts the degrees of freedom
+    based on the autocorrelation of the dataset.
+    See Krasting et al. 2013 for more details
+    DOI: 10.1175/JCLI-D-12-00832.1
+
+    Parameters
+    ----------
+    arr1 : numpy.ndarray
+        First array of data points
+    arr2 : numpy.ndarray
+        Second array of data points
+    axis : int, optional
+        Axis to perform t-test, by default 0
+
+    Returns
+    -------
+    tuple
+        t-statistic, probability,
+        arr1 autocorrelation, arr2 autocorrelation
+    """
+    arr1, arr2, axis = _chk2_asarray(arr1, arr2, axis)
+    variance1 = np.var(arr1, axis, ddof=1)
+    variance2 = np.var(arr2, axis, ddof=1)
+    arrlen1 = arr1.shape[axis]
+    arrlen2 = arr2.shape[axis]
+    lag1r1 = _autocorr(np.split(arr1, arr1.shape[axis], axis))
+    lag1r2 = _autocorr(np.split(arr2, arr2.shape[axis], axis))
+    n1eff = arrlen1 * ((1 - lag1r1) / (1 + lag1r1))
+    n2eff = arrlen2 * ((1 - lag1r2) / (1 + lag1r2))
+    df = n1eff + n2eff - 2
+    diff = np.mean(arr1, axis) - np.mean(arr2, axis)
+    svar = ((arrlen1 - 1) * variance1 + (arrlen2 - 1) * variance2) / float(df)
+    t = diff / np.sqrt(svar * (1.0 / arrlen1 + 1.0 / arrlen2))
+    t = np.where((diff == 0) * (svar == 0), 1.0, t)  # define t=0/0 = 0, identical means
+    prob = stats.distributions.t.sf(np.abs(t), df) * 2
+    # use np.abs to get upper tail
+    # distributions.t.sf currently does not propagate nans
+    # this can be dropped, if distributions.t.sf propagates nans
+    # if this is removed, then prob = prob[()] needs to be removed
+    prob = np.where(np.isnan(t), np.nan, prob)
+    if t.ndim == 0:
+        t = t[()]
+        prob = prob[()]
+    result = [t, prob, lag1r1, lag1r2]
+    result = [float(x) for x in result]
+    return tuple(result)
+
+
+def _chk2_asarray(arr1, arr2, axis):
+    if axis is None:
+        arr1 = np.ravel(arr1)
+        arr2 = np.ravel(arr2)
+        outaxis = 0
+    else:
+        arr1 = np.asarray(arr1)
+        arr2 = np.asarray(arr2)
+        outaxis = axis
+    return arr1, arr2, outaxis
 
 
 def _remove_trend(x, y, order=1, anomaly=True, return_coefs=False, coefs=None):
@@ -145,6 +240,29 @@ class VitalsDataFrame(pd.DataFrame):
     @property
     def _constructor(self):
         return VitalsDataFrame
+
+    def ttest(self, df2):
+        """Performs t-test between two instances of VitalsDataFrame
+
+        Parameters
+        ----------
+        df2 : VitalsDataFrame
+            Comparison data set
+
+        Returns
+        -------
+        pandas.DataFrame
+            Contains p-values for variables common between the
+            two VitalsDataFrames
+        """
+
+        # get a list of common variables
+        varlist = list(set(self.columns).intersection(df2.columns))
+
+        # perform t-test
+        result = {k: ttest_ind_auto(self[k], df2[k])[1] for k in varlist}
+
+        return pd.DataFrame(result, index=["pval"]).transpose()
 
     def smooth(self, window, extrap=False):
         """Apply a smoother to the dataset
@@ -363,12 +481,7 @@ class Timeseries:
 
 
 def open_db(
-    dbfile,
-    variables=None,
-    yearshift=0.0,
-    legacy_land=False,
-    start=None,
-    end=None,
+    dbfile, variables=None, yearshift=0.0, legacy_land=False, start=None, end=None,
 ):
     """Function to read sqlite dbfile"""
 
