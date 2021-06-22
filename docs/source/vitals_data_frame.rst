@@ -120,7 +120,31 @@ Removing drift
    df_hist.t_ref.plot(title="Historical",**plotargs);
    @savefig samplefig8.png width=5in
    df_hist_detrended.t_ref.plot(color="green",linewidth=0.5);
+
+Statistical comparison of two datasets
+--------------------------------------
+
+An instance of the VitalsDataFrame can be passed to a second instance 
+and a t-test can be performed to identify differences between 
+variables that are common to the two instances. The t-test adjusts the 
+degrees of freedom based on the autocorrelation of the timeseries
+providing a more stringent threshold for assessing differences. For more 
+details and examples of this method, see 
+`Santer et al. 2000 <https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/1999JD901105>`_
+and 
+`Krasting et al. 2013 <https://journals.ametsoc.org/view/journals/clim/26/20/jcli-d-12-00832.1.xml>`_.
+
+In the example below, the test historical dataset is artifically split 
+into two 20-year epochs for comparison.
    
+.. ipython:: python
+
+   df_hist_t0 = df_hist[-40:-20]
+   df_hist_t1 = df_hist[-20::]
+
+   pvals = df_hist_t0.ttest(df_hist_t1)
+
+   pvals
 
 
 
