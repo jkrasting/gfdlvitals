@@ -66,6 +66,10 @@ def xr_average(fyear, tar, modules):
             _area = _area.rename({"lath": "yT", "lonh": "xT"})
         else:
             earth_radius = 6371.0e3  # Radius of the Earth in 'm'
+            if "CELL_AREA" not in ds_grid.variables:
+                warnings.warn("Unable to find sea ice cell area. Skipping.")
+                return
+
             _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius ** 2)
 
         # --- todo Add in concentration and extent
