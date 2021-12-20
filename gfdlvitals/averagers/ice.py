@@ -32,11 +32,13 @@ def xr_average(fyear, tar, modules):
         data_file = netcdf.extract_from_tar(tar, f"{fyear}.ice_month.nc")
         dset = netcdf.in_mem_xr(data_file)
 
-        grid_file = (
-            f"{fyear}.ice_static.nc"
-            if netcdf.tar_member_exists(tar, f"{fyear}.ice_static.nc")
-            else f"{fyear}.ice_month.nc"
-        )
+        if netcdf.tar_member_exists(tar, f"{fyear}.ice_static.nc"):
+            grid_file = f"{fyear}.ice_static.nc"
+        elif netcdf.tar_member_exists(tar, f"{fyear}.sea_ice_geometry.nc"):
+            grid_file = f"{fyear}.sea_ice_geometry.nc"
+        else:
+            grid_file = f"{fyear}.ice_month.nc"
+
         grid_file = netcdf.extract_from_tar(tar, grid_file)
         ds_grid = netcdf.in_mem_xr(grid_file)
 
@@ -55,14 +57,24 @@ def xr_average(fyear, tar, modules):
         else:
             warnings.warn("Unable to determine sea ice concentation")
 
-        earth_radius = 6371.0e3  # Radius of the Earth in 'm'
-        _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius ** 2)
+        if "Ah" in ds_grid.variables:
+            ice_area_units = str(ds_grid.Ah.units)
+            assert (
+                ice_area_units == "m2"
+            ), f"Ice area units {ice_area_units} are not correct. Expected m2"
+            _area = ds_grid.Ah
+            _area = _area.rename({"lath": "yT", "lonh": "xT"})
+        else:
+            earth_radius = 6371.0e3  # Radius of the Earth in 'm'
+            _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius ** 2)
 
         # --- todo Add in concentration and extent
 
         for region in ["global", "nh", "sh"]:
+            geolat_var = "geolat" if "geolat" in ds_grid.variables else "GEOLAT"
+
             _masked_area = xrtools.xr_mask_by_latitude(
-                _area, ds_grid.GEOLAT, region=region
+                _area, ds_grid[geolat_var], region=region
             )
             gmeantools.write_sqlite_data(
                 f"{fyear}.{region}Ave{modules[member]}.db",
@@ -121,6 +133,7 @@ def xr_average(fyear, tar, modules):
             _dset_weighted = xrtools.xr_weighted_avg(_dset, weights)
             newvars = {x: x + "_mean" for x in list(_dset_weighted.variables)}
             _dset_weighted = _dset_weighted.rename(newvars)
+
             xrtools.xr_to_db(_dset_weighted, fyear, f"{fyear}.{region}AveIce.db")
             xrtools.xr_to_db(_dset_max, fyear, f"{fyear}.{region}AveIce.db")
             xrtools.xr_to_db(_dset_min, fyear, f"{fyear}.{region}AveIce.db")
