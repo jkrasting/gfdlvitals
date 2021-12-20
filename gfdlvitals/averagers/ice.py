@@ -71,11 +71,14 @@ def xr_average(fyear, tar, modules):
         # --- todo Add in concentration and extent
 
         for region in ["global", "nh", "sh"]:
-            geolat_var = "geolat" if "geolat" in ds_grid.variables else "GEOLAT"
 
-            _masked_area = xrtools.xr_mask_by_latitude(
-                _area, ds_grid[geolat_var], region=region
-            )
+            if "geolat" in ds_grid.variables:
+                _geolat = ds_grid["geolat"]
+                _geolat = _geolat.rename({"lath": "yT", "lonh": "xT"})
+            else:
+                _geolat = ds_grid["GEOLAT"]
+
+            _masked_area = xrtools.xr_mask_by_latitude(_area, _geolat, region=region)
             gmeantools.write_sqlite_data(
                 f"{fyear}.{region}Ave{modules[member]}.db",
                 "area",
