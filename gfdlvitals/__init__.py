@@ -1,6 +1,7 @@
 """gfdlvitals - a package for computing global mean metrics"""
 
 from . import averagers
+from . import cli
 from . import models
 from . import sample
 from . import util
@@ -9,6 +10,7 @@ from .plot import *
 
 __all__ = [
     "averagers",
+    "cli",
     "models",
     "util",
     "VitalsDataFrame",
