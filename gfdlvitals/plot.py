@@ -41,6 +41,7 @@ def plot_timeseries(
     nyears=None,
     labels=None,
     legend=True,
+    means=True,
 ):
     """Standardized function to make a timeseries plot
 
@@ -62,6 +63,8 @@ def plot_timeseries(
         Comma-separated list of dataset labels, by default None
     legend : bool, optional
         Display a legend for the plot, by default True
+    means : bool, optional
+        Add variable means to the legend, by default True
 
     Returns
     -------
@@ -143,13 +146,21 @@ def plot_timeseries(
             nc_time_axis.CalendarDateTime(item, "noleap") for item in dset.index.values
         ]
 
+        # Add means to the labels
+        _label = labels[i]
+        if means:
+            _mean = float(dset[var].values[0:nyears].mean())
+            _mean = round(_mean, 4)
+            _label = f"{_label}  (mean={_mean})"
+            labels[i] = _label
+
         # Make the first plot
         (axes_dict[label]["line"],) = _ax.plot(
             times[0:nyears],
             dset[var].values[0:nyears],
             color=dset.attrs["color"],
             alpha=dset.attrs["alpha"],
-            label=labels[i],
+            label=_label,
         )
 
         _lines.append(axes_dict[label]["line"])
