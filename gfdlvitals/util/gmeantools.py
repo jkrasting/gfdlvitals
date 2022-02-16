@@ -1,7 +1,9 @@
 """ Generic Suite of Utilities """
 
+import math
 import pickle
 import sqlite3
+import warnings
 
 import numpy as np
 import pkg_resources as pkgr
@@ -30,12 +32,7 @@ def get_web_vars_dict():
     mapping_file = pkgr.resource_filename(
         "gfdlvitals", "resources/LM3_variable_dictionary.pkl"
     )
-    return pickle.load(
-        open(
-            mapping_file,
-            "rb",
-        )
-    )
+    return pickle.load(open(mapping_file, "rb",))
 
 
 def mask_latitude_bands(var, cell_area, geolat, region="global"):
@@ -79,12 +76,7 @@ def mask_latitude_bands(var, cell_area, geolat, region="global"):
 
 
 def area_mean(
-    var,
-    cell_area,
-    geolat,
-    geolon,
-    region="global",
-    cell_depth=None,
+    var, cell_area, geolat, geolon, region="global", cell_depth=None,
 ):
     """Computes area mean of a variable
 
@@ -277,6 +269,24 @@ def write_sqlite_data(
     component : str, optional
         Model component, by default None
     """
+
+    missing_value = -1.0e20
+
+    # check if result is a nan and replace with a defined missing value
+    if varmean is not None:
+        if math.isnan(float(varmean)):
+            warnings.warn(
+                f"Could not update {sqlfile} variable {varname} with mean={varmean}"
+            )
+            varmean = missing_value
+
+    if varsum is not None:
+        if math.isnan(float(varsum)):
+            warnings.warn(
+                f"Could not update {sqlfile} variable {varname} with mean={varsum}"
+            )
+            varsum = missing_value
+
     conn = sqlite3.connect(sqlfile)
     cur = conn.cursor()
     if component == "land":
