@@ -1,5 +1,7 @@
 """gfdlvitals - a package for computing global mean metrics"""
 
+from .version import __version__
+
 from . import averagers
 from . import cli
 from . import models
@@ -17,4 +19,3 @@ __all__ = [
     "open_db",
     "plot_timeseries",
 ]
-__version__ = "3.0a1"
