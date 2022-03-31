@@ -532,6 +532,7 @@ def open_db(
     )
 
     df = VitalsDataFrame(df)
+    df = df.sort_index()
 
     for var in list(df.columns):
         df[var].attrs = attributes[var]
