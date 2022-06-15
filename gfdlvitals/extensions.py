@@ -498,7 +498,7 @@ class Timeseries:
         self.dict = dict(zip(self._t, self._data))
         self.dict = {
             **self.dict,
-            **dict(zip(missing_times, [np.nan for x in missing_times])),
+            **dict(zip(missing_times, [np.nan] * len(missing_times))),
         }
 
     @property
