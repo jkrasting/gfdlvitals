@@ -2,6 +2,7 @@
 
 import math
 import sqlite3
+import warnings
 
 import cftime
 
@@ -423,17 +424,25 @@ class Timeseries:
         start=None,
         end=None,
     ):
+
+        # open the sqlite connection
         con = sqlite3.connect(f)
         cur = con.cursor()
+
+        # get the results from the sqlite file for the requested variable
         if legacy_land is True:
             _ = cur.execute("SELECT year,sum FROM " + var)
         else:
             _ = cur.execute("SELECT year,value FROM " + var)
         results = cur.fetchall()
-        self.t, self.data = zip(*results)
-        self.t = np.array(self.t)
+
+        # split list of tuples into two different lists
+        self._t, self._data = zip(*results)
+        self._t = np.array(self._t)
+
         _ = cur.execute("SELECT name FROM sqlite_master where TYPE='table'")
         tables = [str(record[0]) for record in cur.fetchall()]
+
         if multiply_by_area is True:
             if "cell_measure" in tables:
                 _ = cur.execute(
@@ -445,37 +454,62 @@ class Timeseries:
             _ = cur.execute("SELECT value FROM " + cell_measure)
             area = np.array(cur.fetchall()).squeeze()
             scale = area * scale
-        self.data = np.array(self.data) * scale
+
+        self._data = np.array(self._data) * scale
+
         if "long_name" in tables:
             _ = cur.execute(f"SELECT value FROM long_name where var='{var}'")
             result = cur.fetchone()
             self.long_name = result[0] if isinstance(result, tuple) else None
         else:
             self.long_name = None
+
         if "units" in tables:
             _ = cur.execute(f"SELECT value FROM units where var='{var}'")
             result = cur.fetchone()
             self.units = result[0] if isinstance(result, tuple) else None
         else:
             self.units = None
+
+        # close the connection
         cur.close()
         con.close()
+
+        # filter based on start year and end year
         if start is not None:
-            idx = [i for i, val in enumerate(self.t) if val >= start]
-            self.t = self.t[idx]
-            self.data = self.data[idx]
+            idx = [i for i, val in enumerate(self._t) if val >= start]
+            self._t = self._t[idx]
+            self._data = self._data[idx]
         else:
-            start = self.t.min()
+            start = self._t.min()
         if end is not None:
-            idx = [i for i, val in enumerate(self.t) if val <= end]
-            self.t = self.t[idx]
-            self.data = self.data[idx]
+            idx = [i for i, val in enumerate(self._t) if val <= end]
+            self._t = self._t[idx]
+            self._data = self._data[idx]
         else:
-            end = self.t.max() + 1
-        missing_times = set(np.arange(start, end)) - set(self.t)
+            end = self._t.max() + 1
+
+        # check for missing values and pad with nans
+        missing_times = set(np.arange(start, end)) - set(self._t)
         if len(list(missing_times)) != 0:
-            print("# WARNING: Timeseries is incomplete for " + var, missing_times)
-        self.dict = dict(zip(self.t, self.data))
+            warnings.warn(f"Timeseries is incomplete for {var}: {missing_times}")
+
+        # pad missing values with nans
+        self.dict = dict(zip(self._t, self._data))
+        self.dict = {
+            **self.dict,
+            **dict(zip(missing_times, [np.nan for x in missing_times])),
+        }
+
+    @property
+    def t(self):
+        k, v = zip(*sorted(self.dict.items()))
+        return k
+
+    @property
+    def data(self):
+        k, v = zip(*sorted(self.dict.items()))
+        return v
 
     def __str__(self):
         return self.__class__.__name__
@@ -485,7 +519,12 @@ class Timeseries:
 
 
 def open_db(
-    dbfile, variables=None, yearshift=0.0, legacy_land=False, start=None, end=None,
+    dbfile,
+    variables=None,
+    yearshift=0.0,
+    legacy_land=False,
+    start=None,
+    end=None,
 ):
     """Function to read sqlite dbfile"""
 
