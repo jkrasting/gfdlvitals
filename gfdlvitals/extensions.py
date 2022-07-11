@@ -242,6 +242,26 @@ class VitalsDataFrame(pd.DataFrame):
     def _constructor(self):
         return VitalsDataFrame
 
+    def build_netrad_toa(self):
+        """Constructs netrad_toa from component terms if available
+
+        Parameters
+        ----------
+        self : VitalsDataFrame
+
+        Returns
+        -------
+        VitalsDataFrame
+        """
+
+        varlist = list(self.columns)
+        if ("netrad_toa" not in varlist) and (
+            all(x in varlist for x in ["swdn_toa", "swup_toa", "olr"])
+        ):
+            self["netrad_toa"] = self["swdn_toa"] - self["swup_toa"] - self["olr"]
+
+        return self
+
     def ttest(self, df2):
         """Performs t-test between two instances of VitalsDataFrame
 
