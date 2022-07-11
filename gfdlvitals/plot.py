@@ -3,6 +3,7 @@
 import cftime
 import nc_time_axis
 
+import numpy as np
 import pkg_resources as pkgr
 
 import matplotlib
@@ -149,7 +150,7 @@ def plot_timeseries(
         # Add means to the labels
         _label = labels[i]
         if means:
-            _mean = float(dset[var].values[0:nyears].mean())
+            _mean = float(np.nanmean(dset[var].values[0:nyears]))
             _mean = round(_mean, 4)
             _label = f"{_label}  (mean={_mean})"
             labels[i] = _label
