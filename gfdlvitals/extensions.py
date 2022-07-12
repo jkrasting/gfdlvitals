@@ -261,6 +261,12 @@ class VitalsDataFrame(pd.DataFrame):
         ):
             self["netrad_toa"] = self["swdn_toa"] - self["swup_toa"] - self["olr"]
 
+        self["netrad_toa"].attrs = {
+            "long_name": "Net TOA Radiation "
+            + "(resconstructed as swdn_toa - swup_toa - olr)",
+            "units": "W m-2",
+        }
+
         return self
 
     def areasum(self):
