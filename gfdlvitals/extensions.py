@@ -491,6 +491,13 @@ class Timeseries:
         else:
             self.units = None
 
+        if "cell_measure" in tables:
+            _ = cur.execute(f"SELECT value FROM cell_measure where var='{var}'")
+            result = cur.fetchone()
+            self.cell_measure = result[0] if isinstance(result, tuple) else None
+        else:
+            self.cell_measure = None
+
         # close the connection
         cur.close()
         con.close()
@@ -569,7 +576,11 @@ def open_db(
         if len(tsobj.t) > 0:
             data[var] = tsobj.data
             years = years + list(tsobj.t)
-            attributes[var] = {"long_name": tsobj.long_name, "units": tsobj.units}
+            attributes[var] = {
+                "long_name": tsobj.long_name,
+                "units": tsobj.units,
+                "cell_measure": tsobj.cell_measure,
+            }
 
     years = list(set(years))
     years = [x + float(yearshift) for x in years]
