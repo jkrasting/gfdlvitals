@@ -1,5 +1,6 @@
 """ Pandas class extension for gfdlvitals """
 
+import copy
 import math
 import sqlite3
 import warnings
@@ -261,6 +262,36 @@ class VitalsDataFrame(pd.DataFrame):
             self["netrad_toa"] = self["swdn_toa"] - self["swup_toa"] - self["olr"]
 
         return self
+
+    def areasum(self):
+        """Returns the area integrated variable based
+        on the cell_measure method
+        """
+        cell_measures = [(x, self[x].attrs["cell_measure"]) for x in list(self.columns)]
+        varlist, cm_set = zip(*cell_measures)
+        cm_set = [x for x in list(set(cm_set)) if x is not None]
+        attrs = {x: self[x].attrs for x in varlist}
+        cell_measures = [x for x in cell_measures if x[0] not in cm_set]
+
+        result = {}
+
+        for x in cell_measures:
+            if x[1] is not None:
+                try:
+                    _res = self[x[0]] * self[x[1]]
+                    _res.attrs = attrs[x[0]]
+                    result[x[0]] = _res
+
+                except Exception as exc:
+                    warnings.warn(f"Unable to sum field {x[0]}")
+
+        result = pd.DataFrame(result)
+        result = VitalsDataFrame(result)
+
+        for var in list(result.columns):
+            result[var].attrs = attrs[var]
+
+        return result
 
     def ttest(self, df2):
         """Performs t-test between two instances of VitalsDataFrame
