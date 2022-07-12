@@ -1,5 +1,6 @@
 """ Standardized plotting routines """
 
+import warnings
 import cftime
 import nc_time_axis
 
@@ -38,6 +39,7 @@ def plot_timeseries(
     var,
     trend=False,
     align_times=False,
+    plottype="average",
     smooth=None,
     nyears=None,
     labels=None,
@@ -56,6 +58,9 @@ def plot_timeseries(
         Plot linear trend line if True, by default False
     align_times : bool, optional
         H, by default False
+    plottype : str, optional
+        Defines plot type as either "average" or "sum",
+        by default "average"
     smooth : int, optional
         Integer number of years to apply smoothing, by default None
     nyears : int, optional
@@ -87,6 +92,10 @@ def plot_timeseries(
 
     # Determine max length of time values
     maxlen = max([len(x.index) for x in dsets])
+
+    # summed
+    if plottype == "sum":
+        dsets = [x.areasum() for x in dsets]
 
     # Compute trends if asked
     if trend:
@@ -147,6 +156,7 @@ def plot_timeseries(
             nc_time_axis.CalendarDateTime(item, "noleap") for item in dset.index.values
         ]
 
+
         # Add means to the labels
         _label = labels[i]
         if means:
@@ -205,10 +215,14 @@ def plot_timeseries(
                 0.01, 1.08, var, ha="left", transform=ax1.transAxes, fontsize=22
             )
 
+            _long_name = dset[var].attrs["long_name"]
+            _long_name = f"Sum of {_long_name}" if plottype == "sum" else _long_name
+
+
             axes_dict[label]["longname_label"] = _ax.text(
                 0.01,
                 1.03,
-                dset[var].attrs["long_name"],
+                _long_name,
                 ha="left",
                 transform=ax1.transAxes,
                 style="italic",
