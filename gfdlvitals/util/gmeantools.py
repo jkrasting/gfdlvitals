@@ -32,7 +32,12 @@ def get_web_vars_dict():
     mapping_file = pkgr.resource_filename(
         "gfdlvitals", "resources/LM3_variable_dictionary.pkl"
     )
-    return pickle.load(open(mapping_file, "rb",))
+    return pickle.load(
+        open(
+            mapping_file,
+            "rb",
+        )
+    )
 
 
 def mask_latitude_bands(var, cell_area, geolat, region="global"):
@@ -76,7 +81,12 @@ def mask_latitude_bands(var, cell_area, geolat, region="global"):
 
 
 def area_mean(
-    var, cell_area, geolat, geolon, region="global", cell_depth=None,
+    var,
+    cell_area,
+    geolat,
+    geolon,
+    region="global",
+    cell_depth=None,
 ):
     """Computes area mean of a variable
 
