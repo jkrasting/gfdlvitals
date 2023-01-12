@@ -488,9 +488,9 @@ class Timeseries:
 
         # get the results from the sqlite file for the requested variable
         if legacy_land is True:
-            _ = cur.execute("SELECT year,sum FROM " + var)
+            _ = cur.execute(f"SELECT year,sum FROM {var} ORDER BY year ASC")
         else:
-            _ = cur.execute("SELECT year,value FROM " + var)
+            _ = cur.execute(f"SELECT year,value FROM {var} ORDER BY year ASC")
         results = cur.fetchall()
 
         # split list of tuples into two different lists
@@ -619,7 +619,7 @@ def open_db(
                 "cell_measure": tsobj.cell_measure,
             }
 
-    years = list(set(years))
+    years = sorted(list(set(years)))
     years = [x + float(yearshift) for x in years]
 
     variables = list(set(variables) - set(skipped))
