@@ -88,11 +88,11 @@ def routines(args, infile):
     tar.close()
 
     # -- Do performance timing
-    #try:
+    # try:
     #    infile = infile.replace("/history/", "/ascii/")
     #    infile = infile.replace(".nc.tar", ".ascii_out.tar")
     #    label = "Timing"
     #    if os.path.exists(infile):
     #        diags.fms.timing(infile, fyear, "./", label)
-    #except RuntimeError:
+    # except RuntimeError:
     #    pass

@@ -70,7 +70,7 @@ def xr_average(fyear, tar, modules):
                 warnings.warn("Unable to find sea ice cell area. Skipping.")
                 return
 
-            _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius ** 2)
+            _area = ds_grid["CELL_AREA"] * 4.0 * np.pi * (earth_radius**2)
 
         # --- todo Add in concentration and extent
 
