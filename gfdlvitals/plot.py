@@ -156,7 +156,6 @@ def plot_timeseries(
             nc_time_axis.CalendarDateTime(item, "noleap") for item in dset.index.values
         ]
 
-
         # Add means to the labels
         _label = labels[i]
         if means:
@@ -217,7 +216,6 @@ def plot_timeseries(
 
             _long_name = dset[var].attrs["long_name"]
             _long_name = f"Sum of {_long_name}" if plottype == "sum" else _long_name
-
 
             axes_dict[label]["longname_label"] = _ax.text(
                 0.01,
