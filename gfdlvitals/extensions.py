@@ -1,6 +1,7 @@
 """ Pandas class extension for gfdlvitals """
 
 import copy
+import datetime
 import math
 import sqlite3
 import warnings
@@ -394,6 +395,11 @@ class VitalsDataFrame(pd.DataFrame):
         self
             Extended dataset
         """
+
+        # convert ISO index to datetime object
+        if isinstance(self.index[0], str):
+            self.index = [datetime.datetime.fromisoformat(x) for x in self.index]
+
         tindex = np.array(
             [
                 cftime.date2num(x, "days since 0001-01-01", calendar="noleap")
