@@ -45,6 +45,7 @@ def plot_timeseries(
     labels=None,
     legend=True,
     means=True,
+    title="both",
 ):
     """Standardized function to make a timeseries plot
 
@@ -71,6 +72,9 @@ def plot_timeseries(
         Display a legend for the plot, by default True
     means : bool, optional
         Add variable means to the legend, by default True
+    title : str, optional
+        Specify "varname", "longname", "both", or "none",
+        by default "both"
 
     Returns
     -------
@@ -210,12 +214,14 @@ def plot_timeseries(
         # Text annotations
 
         if i == 0:
+            _varname = var if (title in ["varname", "both"]) else ""
             axes_dict[label]["topline_label"] = _ax.text(
-                0.01, 1.08, var, ha="left", transform=ax1.transAxes, fontsize=22
+                0.01, 1.08, _varname, ha="left", transform=ax1.transAxes, fontsize=22
             )
 
             _long_name = dset[var].attrs["long_name"]
             _long_name = f"Sum of {_long_name}" if plottype == "sum" else _long_name
+            _long_name = _long_name if (title in ["longname", "both"]) else ""
 
             axes_dict[label]["longname_label"] = _ax.text(
                 0.01,
