@@ -370,7 +370,7 @@ class VitalsDataFrame(pd.DataFrame):
         padding = np.arange(1, maxlen - len(self.index) + 1) + endyear[0]
         added_index = [cftime.DatetimeNoLeap(x, *endyear[1:]) for x in padding]
         _df = pd.DataFrame({"times": added_index}).set_index("times")
-        _df = self.append(_df)
+        _df = pd.concat([self,_df])
         _df.attrs = self.attrs
         for column in self.columns:
             _df[column].attrs = self[column].attrs
