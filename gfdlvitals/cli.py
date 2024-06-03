@@ -123,6 +123,7 @@ def process_year(args, infile):
             "AeroCMIP",
             "Ocean",
             "Ice",
+            "IceShelf",
             "TOPAZ",
             "COBALT",
             "BLING",
