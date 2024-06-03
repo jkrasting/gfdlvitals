@@ -55,13 +55,24 @@ def routines(args, infile):
     if any(comp in comps for comp in ["ice", "all"]):
         averagers.ice.xr_average(fyear, tar, modules)
 
+    # -- Ice Shelf
+    fname = f"{fyear}.ice_shelf_scalar.nc"
+    if any(comp in comps for comp in ["iceshelf", "all"]):
+        if tar_member_exists(tar, fname):
+            print(fname)
+            fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
+            extract_ocean_scalar.mom6(
+                fdata, fyear, "./", outname="globalAveIceShelf.db"
+            )
+            fdata.close()
+
     # -- Ocean
     fname = f"{fyear}.ocean_scalar_annual.nc"
     if any(comp in comps for comp in ["ocean", "all"]):
         if tar_member_exists(tar, fname):
             print(f"{fyear}.ocean_scalar_annual.nc")
             fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
-            extract_ocean_scalar.mom6(fdata, fyear, "./")
+            extract_ocean_scalar.mom6(fdata, fyear, "./", outname="globalAveOcean.db")
             fdata.close()
 
     # -- OBGC

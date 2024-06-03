@@ -1,11 +1,12 @@
 """ Extract scalar fields from ocean model output """
 
+import numpy as np
 from . import gmeantools
 
 __all__ = ["mom6"]
 
 
-def mom6(fdata, fyear, outdir):
+def mom6(fdata, fyear, outdir, outname="globalAveOcean.db"):
     """Extract MOM6 scalar output and save to sqlite
 
     Parameters
@@ -27,8 +28,30 @@ def mom6(fdata, fyear, outdir):
         if len(fdata.variables[varname].shape) == 2:
             units = gmeantools.extract_metadata(fdata, varname, "units")
             long_name = gmeantools.extract_metadata(fdata, varname, "long_name")
-            result = fdata.variables[varname][0, 0]
-            sqlfile = outdir + "/" + fyear + ".globalAveOcean.db"
+            result = fdata.variables[varname]
+            if result.shape[0] == 12:
+                result = result[:, 0]
+                result = np.ma.average(
+                    result,
+                    weights=[
+                        31.0,
+                        28.0,
+                        31.0,
+                        30.0,
+                        31.0,
+                        30.0,
+                        31.0,
+                        31.0,
+                        30.0,
+                        31.0,
+                        30.0,
+                        31.0,
+                    ],
+                    axis=0,
+                )
+            elif result.shape[0] == 1:
+                result = result[0, 0]
+            sqlfile = f"{outdir}/{fyear}.{outname}"
             gmeantools.write_metadata(sqlfile, varname, "units", units)
             gmeantools.write_metadata(sqlfile, varname, "long_name", long_name)
             gmeantools.write_sqlite_data(sqlfile, varname, fyear[:4], result)
