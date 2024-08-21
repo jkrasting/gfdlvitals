@@ -88,7 +88,7 @@ def xr_weighted_avg(dset, weights):
 
         if isinstance(weight, xr.DataArray):
             weight = weight.fillna(0.0)
-                  ï
+
         _dset_weighted = _dset.weighted(weight).mean()
         for x in list(_dset_weighted.variables):
             _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
