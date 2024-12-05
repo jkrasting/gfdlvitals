@@ -1,6 +1,7 @@
 """ Tools for working with xarray datasets """
 
 import xarray as xr
+import numpy as np
 
 from gfdlvitals.util.gmeantools import write_sqlite_data
 from gfdlvitals.util.gmeantools import write_metadata
@@ -84,6 +85,8 @@ def xr_weighted_avg(dset, weights):
         variables = list(dset.variables.keys())
         for x in variables:
             if sorted(dset[x].dims) == sorted(weight.dims):
+                if 'timedelta' in str(dset[x].dtype):
+                    dset[x] = dset[x].astype(np.float32)
                 _dset[x] = dset[x]
 
         if isinstance(weight, xr.DataArray):
