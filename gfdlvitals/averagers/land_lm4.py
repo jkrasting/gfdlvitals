@@ -111,7 +111,9 @@ def xr_average(fyear, tar, modules):
 
                 # _masked_area = _masked_area.fillna(0)
 
-                weights = dset.average_DT.astype("float") * _masked_area
+                t_bounds = dset.time_bnds
+                dt = t_bounds[:,:,1] - t_bounds[:,:,0]
+                weights = dt.astype("float") * _masked_area
                 if _measure == "soil_area":
                     area_x_depth = _masked_area * depth
                     gmeantools.write_sqlite_data(
