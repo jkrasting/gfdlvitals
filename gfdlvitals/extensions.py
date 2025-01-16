@@ -617,18 +617,12 @@ def open_db(
     for var in variables:
         tsobj = Timeseries(dbfile, var, legacy_land=legacy_land, start=start, end=end)
         if len(tsobj.t) > 0:
-            data[var] = tsobj.data
-            years = years + list(tsobj.t)
+            data[var] = pd.Series(tsobj.data, index=list(tsobj.t))
             attributes[var] = {
                 "long_name": tsobj.long_name,
                 "units": tsobj.units,
                 "cell_measure": tsobj.cell_measure,
             }
-
-    years = sorted(list(set(years)))
-    years = [x + float(yearshift) for x in years]
-
-    variables = list(set(variables) - set(skipped))
 
     if start is None:
         start = -1 * math.inf
@@ -636,7 +630,8 @@ def open_db(
     if end is None:
         end = math.inf
 
-    df = pd.DataFrame(data, index=years)
+    df = pd.DataFrame(data)
+    df.index = df.index + float(yearshift)
     df = df[(df.index >= start) & (df.index <= end)]
     df.index = cftime.num2date(
         (df.index * 365.0) - (365.0 / 2.0) - 1,
