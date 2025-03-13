@@ -137,7 +137,7 @@ def xr_average(fyear, tar, modules):
             _dset_min = _dset_min.rename(newvars)
 
             t_bounds = dset.time_bnds
-            dt = t_bounds[:,:,1] - t_bounds[:,:,0]
+            dt = t_bounds[:,1] - t_bounds[:,0]
             weights = dt.astype("float")
 
             _dset_weighted = xrtools.xr_weighted_avg(_dset, weights)
