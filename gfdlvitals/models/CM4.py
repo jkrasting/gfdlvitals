@@ -43,37 +43,57 @@ def routines(args, infile):
         "aerosol_month_cmip": "AeroCMIP",
     }
     if any(comp in comps for comp in ["atmos", "all"]):
-        averagers.cubesphere.xr_average(fyear, tar, modules)
+        try:
+            averagers.cubesphere.xr_average(fyear, tar, modules)
+        except Exception as exc:
+            print("\n\n# -----\n# Atmosphere vitals failed\n# -----\n\n")
+            print(exc)
 
     # -- Land Fields
     modules = {"land_month": "Land"}
     if any(comp in comps for comp in ["land", "all"]):
-        averagers.land_lm4.xr_average(fyear, tar, modules)
+        try:
+            averagers.land_lm4.xr_average(fyear, tar, modules)
+        except Exception as exc:
+            print("\n\n# -----\n# Land vitals failed\n# -----\n\n")
+            print(exc)
 
     # -- Ice
     modules = {"ice_month": "Ice"}
     if any(comp in comps for comp in ["ice", "all"]):
-        averagers.ice.xr_average(fyear, tar, modules)
+        try:
+            averagers.ice.xr_average(fyear, tar, modules)
+        except Exception as exc:
+            print("\n\n# -----\n# Ice vitals failed\n# -----\n\n")
+            print(exc)
 
     # -- Ice Shelf
     fname = f"{fyear}.ice_shelf_scalar.nc"
     if any(comp in comps for comp in ["iceshelf", "all"]):
-        if tar_member_exists(tar, fname):
-            print(fname)
-            fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
-            extract_ocean_scalar.mom6(
-                fdata, fyear, "./", outname="globalAveIceShelf.db"
-            )
-            fdata.close()
+        try:
+            if tar_member_exists(tar, fname):
+                print(fname)
+                fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
+                extract_ocean_scalar.mom6(
+                    fdata, fyear, "./", outname="globalAveIceShelf.db"
+                )
+                fdata.close()
+        except Exception as exc:
+            print("\n\n# -----\n# Ice shelf vitals failed\n# -----\n\n")
+            print(exc)
 
     # -- Ocean
     fname = f"{fyear}.ocean_scalar_annual.nc"
     if any(comp in comps for comp in ["ocean", "all"]):
-        if tar_member_exists(tar, fname):
-            print(f"{fyear}.ocean_scalar_annual.nc")
-            fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
-            extract_ocean_scalar.mom6(fdata, fyear, "./", outname="globalAveOcean.db")
-            fdata.close()
+        try:
+            if tar_member_exists(tar, fname):
+                print(f"{fyear}.ocean_scalar_annual.nc")
+                fdata = nctools.extract_from_tar(tar, fname, ncfile=True)
+                extract_ocean_scalar.mom6(fdata, fyear, "./", outname="globalAveOcean.db")
+                fdata.close()
+        except Exception as exc:
+            print("\n\n# -----\n# Ocean vitals failed\n# -----\n\n")
+            print(exc)
 
     # -- OBGC
     modules = {
@@ -89,11 +109,19 @@ def routines(args, infile):
         "ocean_bling_cmip6_omip_tracers_year_z": "OBGC",
     }
     if any(comp in comps for comp in ["obgc", "all"]):
-        averagers.tripolar.xr_average(fyear, tar, modules)
+        try:
+            averagers.tripolar.xr_average(fyear, tar, modules)
+        except Exception as exc:
+            print("\n\n# -----\n# OBGC vitals failed\n# -----\n\n")
+            print(exc)
 
     # -- AMOC
     if any(comp in comps for comp in ["amoc", "all"]):
-        diags.amoc.mom6_amoc(fyear, tar)
+        try:
+            diags.amoc.mom6_amoc(fyear, tar)
+        except Exception as exc:
+            print("\n\n# -----\n# AMOC vitals failed\n# -----\n\n")
+            print(exc)
 
     # -- Close out the tarfile handle
     tar.close()
