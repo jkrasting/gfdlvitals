@@ -3,6 +3,7 @@
 import math
 import pickle
 import sqlite3
+import sys
 import warnings
 
 import numpy as np
@@ -283,16 +284,12 @@ def write_sqlite_data(
     # check if result is a nan and replace with a defined missing value
     if varmean is not None:
         if math.isnan(float(varmean)):
-            warnings.warn(
-                f"Could not update {sqlfile} variable {varname} with mean={varmean}"
-            )
+            print(f"  WARNING: {varname} mean is NaN in {sqlfile}, writing missing value", file=sys.stderr)
             varmean = missing_value
 
     if varsum is not None:
         if math.isnan(float(varsum)):
-            warnings.warn(
-                f"Could not update {sqlfile} variable {varname} with mean={varsum}"
-            )
+            print(f"  WARNING: {varname} sum is NaN in {sqlfile}, writing missing value", file=sys.stderr)
             varsum = missing_value
 
     conn = sqlite3.connect(sqlfile)

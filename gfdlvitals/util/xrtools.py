@@ -97,6 +97,6 @@ def xr_weighted_avg(dset, weights):
             _dset_weighted[x] = _dset_weighted[x].astype(dset[x].dtype)
             _dset_weighted[x].attrs = dset[x].attrs
 
-        result = result.merge(_dset_weighted)
+        result = result.merge(_dset_weighted, compat="override")
 
     return result
