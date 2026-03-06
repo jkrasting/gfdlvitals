@@ -5,10 +5,11 @@ import glob
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import gfdlvitals
 
-__all__ = ["arguments", "process_year", "run"]
+__all__ = ["arguments", "process_year", "run", "main"]
 
 
 def arguments(args=None):
@@ -195,3 +196,8 @@ def run(args):
     # -- Clean up
     os.chdir(cwd)
     shutil.rmtree(tempdir)
+
+
+def main():
+    """Entry point for the gfdlvitals command"""
+    run(sys.argv[1:])

@@ -1,6 +1,11 @@
 """gfdlvitals - a package for computing global mean metrics"""
 
-from .version import __version__
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("gfdlvitals")
+except PackageNotFoundError:
+    __version__ = "unknown"
 
 from . import averagers
 from . import cli

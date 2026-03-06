@@ -1,15 +1,10 @@
-#!/usr/bin/env python
-
-""" CLI script for plotting SQLite files """
+"""CLI script for plotting SQLite files"""
 
 import argparse
 import os
 
-import matplotlib.pyplot as plt
-
 import gfdlvitals
 
-COUNT = 1
 
 def arguments():
     """
@@ -79,7 +74,11 @@ def arguments():
     return args
 
 
-
-if __name__ == "__main__":
+def main():
+    """Entry point for the plotdb command"""
     cliargs = arguments()
     gfdlvitals.plot.run_plotdb(cliargs)
+
+
+if __name__ == "__main__":
+    main()

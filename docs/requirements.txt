@@ -1,10 +1,11 @@
-cftime<=1.2.1
+cftime
 ipython
 jupyter
 matplotlib>=3.3.3
-nc-time-axis<=1.2.0
-netCDF4 
+nc-time-axis
+netCDF4
 numpy
 pandas
 scipy
+sphinx-rtd-theme
 xarray

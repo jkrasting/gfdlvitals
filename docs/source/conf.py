@@ -11,9 +11,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
-print(os.getcwd())
-sys.path.insert(0, os.path.abspath('../../'))
+from importlib.metadata import version as _get_version
 
 
 # -- Project information -----------------------------------------------------
@@ -23,7 +21,8 @@ copyright = '2020, John Krasting'
 author = 'John Krasting'
 
 # The full version, including alpha/beta/rc tags
-release = '3.0a1'
+release = _get_version("gfdlvitals")
+version = release
 
 
 # -- General configuration ---------------------------------------------------
@@ -67,4 +66,6 @@ master_doc = 'index'
 
 #-- Build api
 from sphinx.ext.apidoc import main
-main(['-f', '-M', '-e', '-T', '../../gfdlvitals', '-o', 'api' ])
+import gfdlvitals
+_pkg_dir = os.path.dirname(gfdlvitals.__file__)
+main(['-f', '-M', '-e', '-T', _pkg_dir, '-o', 'api' ])

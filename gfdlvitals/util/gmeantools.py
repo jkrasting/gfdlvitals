@@ -6,7 +6,7 @@ import sqlite3
 import warnings
 
 import numpy as np
-import pkg_resources as pkgr
+from importlib.resources import files
 
 __all__ = [
     "get_web_vars_dict",
@@ -29,9 +29,7 @@ def get_web_vars_dict():
     dict
         LM3 variable module mappings and metadata
     """
-    mapping_file = pkgr.resource_filename(
-        "gfdlvitals", "resources/LM3_variable_dictionary.pkl"
-    )
+    mapping_file = str(files("gfdlvitals").joinpath("resources/LM3_variable_dictionary.pkl"))
     return pickle.load(
         open(
             mapping_file,

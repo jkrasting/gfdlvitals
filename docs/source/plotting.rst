@@ -15,6 +15,7 @@ options to smooth the data, overlay a trend line, and align offset
 time axes.
 
 .. ipython:: python
+   :okexcept:
 
    import gfdlvitals
 

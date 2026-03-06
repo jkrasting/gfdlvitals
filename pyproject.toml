@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-git-versioning>=2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gfdlvitals"
+dynamic = ["version"]
+description = "Tools for calculating scalar diagnostics from GFDL models"
+readme = {content-type = "text/x-rst", text = """
+**gfdlvitals** is a Python package in the public domain
+that provides tools for calculating, storing, and analyzing
+scalar diagnostics from GFDL's CM4-class models.
+
+More Information
+----------------
+- Source code: `<https://github.com/jkrasting/gfdlvitals>`_
+- Documentation: `<https://gfdlvitals.readthedocs.io/en/latest/>`_
+"""}
+requires-python = ">=3.9"
+authors = [{name = "John Krasting", email = "john.krasting@noaa.gov"}]
+keywords = ["climate", "model", "analysis", "scalar", "diagnostics", "gfdl", "AM4", "CM4", "ESM4", "OM4", "LM4"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "License :: Public Domain",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "h5netcdf",
+    "pandas",
+    "netCDF4",
+    "matplotlib",
+    "xarray",
+    "cftime",
+    "nc-time-axis",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/jkrasting/gfdlvitals"
+Documentation = "https://gfdlvitals.readthedocs.io/en/latest/"
+
+[project.scripts]
+gfdlvitals = "gfdlvitals.cli:main"
+db2nc = "gfdlvitals.cli_db2nc:main"
+plotdb = "gfdlvitals.cli_plotdb:main"
+
+[tool.setuptools.packages.find]
+include = ["gfdlvitals*"]
+
+[tool.setuptools.package-data]
+gfdlvitals = [
+    "resources/LM3_variable_dictionary.pkl",
+    "resources/historical.db",
+    "resources/picontrol.db",
+    "resources/fonts/Roboto/*",
+    "resources/fonts/Roboto_Condensed/*",
+]
+
+[tool.setuptools-git-versioning]
+enabled = true
+dev_template = "{tag}.dev{ccount}+{sha}"
+dirty_template = "{tag}.dev{ccount}+{sha}.dirty"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

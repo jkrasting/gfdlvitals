@@ -1,7 +1,8 @@
 *.swp
 *__pycache__
 python/*.pyc
-gfdlvitals.egg-info/
+*.egg-info/
+.venv/
 testing/test_data
 testing/db
 testing/db-esm2
