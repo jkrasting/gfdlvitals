@@ -200,4 +200,5 @@ def run(args):
 
 def main():
     """Entry point for the gfdlvitals command"""
+    sys.stdout.reconfigure(line_buffering=True)
     run(sys.argv[1:])
