@@ -73,10 +73,11 @@ def in_mem_xr(data):
         In-memory xarray dataset object
     """
 
+    time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
     if isinstance(data, netCDF4._netCDF4.Dataset):
-        dfile = xr.open_dataset(xr.backends.NetCDF4DataStore(data), use_cftime=True)
+        dfile = xr.open_dataset(xr.backends.NetCDF4DataStore(data), decode_times=time_coder, decode_timedelta=False)
     else:
-        dfile = xr.open_dataset(data, use_cftime=True)
+        dfile = xr.open_dataset(data, decode_times=time_coder, decode_timedelta=False)
 
     return dfile
 
