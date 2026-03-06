@@ -1,3 +1,0 @@
-"""momlevel: version information"""
-
-__version__ = "3.0.12"

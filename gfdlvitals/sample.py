@@ -1,6 +1,6 @@
 """ Sample db files for demonstration """
 
-import pkg_resources as pkgr
+from importlib.resources import files
 
-historical = pkgr.resource_filename("gfdlvitals", "resources/historical.db")
-picontrol = pkgr.resource_filename("gfdlvitals", "resources/picontrol.db")
+historical = str(files("gfdlvitals").joinpath("resources/historical.db"))
+picontrol = str(files("gfdlvitals").joinpath("resources/picontrol.db"))

@@ -138,6 +138,7 @@ In the example below, the test historical dataset is artifically split
 into two 20-year epochs for comparison.
    
 .. ipython:: python
+   :okexcept:
 
    df_hist_t0 = df_hist[-40:-20]
    df_hist_t1 = df_hist[-20::]

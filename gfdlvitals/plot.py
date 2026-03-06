@@ -5,7 +5,7 @@ import cftime
 import nc_time_axis
 
 import numpy as np
-import pkg_resources as pkgr
+from importlib.resources import files
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ COUNT = 1
 def set_font():
     """Sets font style to Roboto"""
     # Add Roboto font
-    fonts_dir = pkgr.resource_filename("gfdlvitals", "resources/fonts")
+    fonts_dir = str(files("gfdlvitals").joinpath("resources/fonts"))
 
     font_dirs = [fonts_dir]
     font_files = font_manager.findSystemFonts(fontpaths=font_dirs)

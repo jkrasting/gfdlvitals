@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-""" Command line utility to convert SQLite to NetCDF """
+"""Command line utility to convert SQLite to NetCDF"""
 
 import argparse
 import os
@@ -12,7 +10,7 @@ import numpy as np
 
 
 def arguments():
-    """Function captures the command-line aguments passed to this script"""
+    """Function captures the command-line arguments passed to this script"""
 
     description = """
     Program for converting .db file format to NetCDF format.
@@ -24,12 +22,10 @@ def arguments():
         description=description, formatter_class=argparse.RawTextHelpFormatter
     )
 
-    # -- Input tile
     parser.add_argument(
         "infile", type=str, help="Input file. Format must be sqlite (*.db)"
     )
 
-    # -- Output file
     parser.add_argument(
         "-o",
         "--outfile",
@@ -122,9 +118,6 @@ def write_nc(
     ncfile = nc.Dataset(outfile, "w", format=ncformat)
     ncfile.setncattr("source_file", dbfile)
     ncfile.setncattr("created", timestamp_str)
-    # ncfile.setncattr('experiment',expName)
-    # ncfile.setncattr('type',plotType)
-    # ncfile.setncattr('region',region)
     _ = ncfile.createDimension("time", 0)
     time = ncfile.createVariable("time", "f4", ("time",))
     time.calendar = "noleap"
@@ -134,9 +127,6 @@ def write_nc(
         if table not in ["long_name", "units", "cell_measure"]:
             data_array = np.ma.ones(len(years)) + 1.0e20
             data_array.mask = True
-            # if 'Land' in plotType:
-            #  extract_list = ['avg','sum']
-            # else:
             extract_list = ["value"]
             for k in extract_list:
                 count = 0
@@ -178,16 +168,15 @@ def write_nc(
     ncfile.close()
 
 
-if __name__ == "__main__":
-
-    # read command line arguments
+def main():
+    """Entry point for the db2nc command"""
     args = arguments()
-    # get the full path of the db file
     infile = os.path.realpath(args.infile)
-    # get list of variables and years in a file
     _tables, _years = tables_and_years(infile)
     write_nc(
         infile, args.outfile, _tables, _years, clobber=args.force, verbose=args.verbose
     )
 
-sys.exit()
+
+if __name__ == "__main__":
+    main()
