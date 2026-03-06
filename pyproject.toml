@@ -39,6 +39,9 @@ dependencies = [
     "xarray",
     "cftime",
     "nc-time-axis",
+    "xgcm",
+    "regionmask",
+    "xoverturning",
 ]
 
 [project.optional-dependencies]
