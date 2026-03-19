@@ -20,18 +20,23 @@ def merge(source, destination):
     sql = "ATTACH '" + source + "' as src"
     cur.execute(sql)
     cur.close()
+
     cur = con.cursor()
     sql = "SELECT * FROM main.sqlite_master WHERE type='table'"
     cur.execute(sql)
+    dst_tables = cur.fetchall()
     cur.close()
+
     cur = con.cursor()
     sql = "SELECT * FROM src.sqlite_master WHERE type='table'"
     cur.execute(sql)
     src_tables = cur.fetchall()
     cur.close()
+
+
     for var in src_tables:
         varname = var[1]
-        if varname not in [x[1] for x in src_tables]:
+        if varname not in [x[1] for x in dst_tables]:
             cur = con.cursor()
             cur.execute(var[-1])
             cur.close()

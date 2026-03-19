@@ -34,6 +34,7 @@ def routines(args, infile):
 
     # -- Get list of components to process
     comps = args.component
+    print(f"Requested Components: {comps}")
 
     # -- Atmospheric Fields
     modules = {
@@ -121,6 +122,14 @@ def routines(args, infile):
             diags.amoc.mom6_amoc(fyear, tar)
         except Exception as exc:
             print("\n\n# -----\n# AMOC vitals failed\n# -----\n\n")
+            print(exc)
+
+    # -- ACC
+    if any(comp in comps for comp in ["acc", "all"]):
+        try:
+            diags.acc.mom6_acc(fyear, tar)
+        except Exception as exc:
+            print("\n\n# -----\n# ACC vitals failed\n# -----\n\n")
             print(exc)
 
     # -- Close out the tarfile handle
