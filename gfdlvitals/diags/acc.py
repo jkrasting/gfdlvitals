@@ -49,7 +49,13 @@ def mom6_acc(fyear, tar, label="Ocean", outdir="./"):
         # select first time level from static file
         # editorial comment: why does the static file have a time dimension?
         dss = in_mem_xr(static_file)
-
+        dss = dss.assign_coords({
+            "xh": ds.xh,
+            "yh": ds.yh,
+            "xq": ds.xq,
+            "yq": ds.yq,
+        })
+        
         ds = ds[["umo","vmo","z_i"]]
         ds = xr.merge([ds,dss], compat="override", join="outer", combine_attrs="override")
         
